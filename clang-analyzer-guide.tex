@@ -149,7 +149,7 @@
 The early draft of this document was composed mostly by Artem Dergachev during his work for the Samsung Research \& Development institute in Moscow. This document is licensed under the Creative Commons Attribution~4.0 International License. To view a copy of this license, visit \url{http://creativecommons.org/licenses/by/4.0/}.
 {\begin{center}\includegraphics{license.png}\end{center}}
 
-The author is greatful to everybody who contributed to this guide by finding mistakes and omissions and giving valuable suggestions --- and this list would probably grow as new revisions of this guide are released --- in particular, to Alexey Sidorin, Julia Trofimovich, and Kirill Romanenkov.
+The author is greatful to everybody who contributed to this guide by finding mistakes and omissions and giving valuable suggestions~--- and this list would probably grow as new revisions of this guide are released~--- in particular, to Alexey Sidorin, Julia Trofimovich, and Kirill Romanenkov.
 
 The guide is still incomplete at parts, and it would need updates in case of changes in the analyzer core, which would inevitably occur at times. Additionally, because the author was not a native speaker of English, any suggestions on improving the grammar aspect of the guide are warmly welcome.
 
@@ -175,6 +175,8 @@ Below is a rough to-do list of stuff that is not yet properly explained in the g
 \end{multicols}
 
 The author welcomes suggestions, bug reports, pull-requests, forks, and whatever may come out of it, on github at \url{https://github.com/haonoq/clang-analyzer-guide}!
+
+On the other hand, please do not send analyzer-related questions in private messages or on e-mail! The best place to ask questions is the cfe-dev mailing list~--- \url{http://lists.llvm.org/pipermail/cfe-dev/}, because other people would see the question and the answer, and probably even be able to find the discussion later through web search.
 
 \newpage
 \subsection{FAQ: a quick guide through the guide}
@@ -1003,6 +1005,8 @@ if (E->EvaluateAsInt(Result, ACtx, Expr::SE_AllowSideEffects)) {
 \end{nobr}
 
 \subsection{Further reading}
+
+An introduction to the Clang AST was given on LLVM developer meeting by Manuel Klimek; a video is available!\footnote{\url{http://llvm.org/devmtg/2013-04/videos/klimek-vhres.mov}}
 
 A comprehensive AST matcher reference is available on the official Clang website \footnote{\url{http://clang.llvm.org/docs/LibASTMatchersReference.html}}.
 
@@ -1959,7 +1963,7 @@ SimpleStreamChecker::checkPointerEscape(ProgramStateRef State,
 }
 \end{lstlisting}\index{ProgramState!remove<>()}
 
-On line 6, a custom check is performed to avoid considering escapes on certain expected kinds of invalidation events --- in order to heuristically determine if the function is of interest.
+On line 6, a custom check is performed to avoid considering escapes on certain expected kinds of invalidation events~--- in order to heuristically determine if the function is of interest.
 
 
 \begin{nobr}
@@ -2128,7 +2132,7 @@ Symbolic values are the notation CSA uses for describing known and unknown value
 
 The basic class for representing various symbolic values is the \lstinline|SVal|\index{SVal|textbf} class. It has various sub-classes which represent different kinds of symbolic values. There are also two auxiliary classes, \lstinline|MemRegion|\index{MemRegion} and \lstinline|SymExpr|\index{SymExpr}, that specifically handle memory regions and symbolic expressions respectively.
 
-Objects of \lstinline|SymExpr| class are also often referred to as \emph{symbols}\index[notion]{Symbolic Value!Symbol|see{Symbolic Expression}}, and represent unknown numeric values; if a value is known during analysis, it is called a \emph{concrete value}. \lstinline|MemRegion| objects --- ``\emph{regions}'' --- are used for two purposes: as locations for region store bindings in the memory model of the analyzer, and in order to represent pointer values.
+Objects of \lstinline|SymExpr| class are also often referred to as \emph{symbols}\index[notion]{Symbolic Value!Symbol|see{Symbolic Expression}}, and represent unknown numeric values; if a value is known during analysis, it is called a \emph{concrete value}. \lstinline|MemRegion| objects~--- ``\emph{regions}''~--- are used for two purposes: as locations for region store bindings in the memory model of the analyzer, and in order to represent pointer values.
 
 The three classes are very much inter-connected. For example, regions may be ``based on'' symbols and concrete values (for example, a region pointed to by a pointer symbol, or a region of an array element with a known or unknown index), symbols may be ``based on'' regions (for example, a symbol defined as an initial value of a region).
 
@@ -2183,8 +2187,8 @@ In any case, you should be using methods of \lstinline|SValBuilder|\index{SValBu
 The \lstinline|getAsRegion()|\index{SVal!getAsRegion()|textbf} method of the \lstinline|SVal| class works for the following \lstinline|SVal| kinds:
 
 \begin{itemize}
-\item[---]\lstinline|loc::MemRegionVal|\index{SVal!Loc!loc::MemRegionVal|textbf} --- a pointer value described as the address of the first byte of the given region.
-\item[---]\lstinline|nonloc::LocAsInteger|\index{SVal!NonLoc!nonloc::LocAsInteger|textbf} --- a similar pointer value, just stored inside an integer. This kind of \lstinline|SVal|'s represents results of pointer-to-integer casts.
+\item[---]\lstinline|loc::MemRegionVal|\index{SVal!Loc!loc::MemRegionVal|textbf}~--- a pointer value described as the address of the first byte of the given region.
+\item[---]\lstinline|nonloc::LocAsInteger|\index{SVal!NonLoc!nonloc::LocAsInteger|textbf}~--- a similar pointer value, just stored inside an integer. This kind of \lstinline|SVal|'s represents results of pointer-to-integer casts.
 \end{itemize}
 
 
@@ -2196,7 +2200,7 @@ Each \lstinline|SubRegion| has exactly one direct super-region obtained via the 
 
 You can obtain the memory space in which the region belongs with \lstinline|getMemorySpace()|\index{MemRegion!getMemorySpace()|textbf} method, and obtain the base region for any sub-region with \lstinline|getBaseRegion()|\index{MemRegion!SubRegion!getBase()|textbf}.
 
-\emph{Base regions}\index[notion]{Symbolic Value!Memory Region!Base Region|textbf} --- the direct sub-regions of memory spaces --- can be either \emph{typed} or \emph{untyped}. A typed region is a region that holds values of a known type. An untyped region is a region with a value of unknown type, even though you may have a rough idea of what is stored there or where it came from.
+\emph{Base regions}\index[notion]{Symbolic Value!Memory Region!Base Region|textbf}~--- the direct sub-regions of memory spaces~--- can be either \emph{typed} or \emph{untyped}. A typed region is a region that holds values of a known type. An untyped region is a region with a value of unknown type, even though you may have a rough idea of what is stored there or where it came from.
 
 \begin{nobr}
 For example, consider the following code:
@@ -2263,28 +2267,28 @@ You should be able to understand most of this picture after reading this subsect
 
 Memory spaces\index[notion]{Symbolic Value!Memory Region!Memory Space} inherit from the \lstinline|MemSpaceRegion|\index{MemRegion!MemSpaceRegion|textbf} class. Most memory spaces are ``singletons'', and there are actually very few of them:
 \begin{itemize}
-\item[---]\lstinline|GlobalsSpaceRegion|\index{MemRegion!GlobalsSpaceRegion|textbf} --- a base class for four different memory spaces:
+\item[---]\lstinline|GlobalsSpaceRegion|\index{MemRegion!GlobalsSpaceRegion|textbf}~--- a base class for four different memory spaces:
 \medskip
 \begin{itemize}
 \item[---]\lstinline|NonStaticGlobalSpaceRegion|
-\index{MemRegion!NonStaticGlobalSpaceRegion|textbf} --- the single memory space for all non-static global variables, which is split into three:
+\index{MemRegion!NonStaticGlobalSpaceRegion|textbf}~--- the single memory space for all non-static global variables, which is split into three:
 \begin{itemize}
 \item[---]\lstinline|GlobalImmutableSpaceRegion|\index{MemRegion!GlobalImmutableSpaceRegion|textbf}, which consists of globals that cannot be modified,
 \item[---]\lstinline|GlobalSystemSpaceRegion|\index{MemRegion!GlobalSystemSpaceRegion|textbf}, which includes variables that are most likely only modified by system calls, such as \lstinline|errno|,
 \item[---]\lstinline|GlobalInternalSpaceRegion|\index{MemRegion!GlobalInternalSpaceRegion|textbf}, which consists other global variables,
 \end{itemize}
-\item[---]\lstinline|StaticGlobalSpaceRegion|\index{MemRegion!StaticGlobalSpaceRegion|textbf} --- the memory space for all static global variables,
+\item[---]\lstinline|StaticGlobalSpaceRegion|\index{MemRegion!StaticGlobalSpaceRegion|textbf}~--- the memory space for all static global variables,
 \end{itemize}
-\item[---]\lstinline|HeapSpaceRegion|\index{MemRegion!HeapSpaceRegion|textbf} --- holding all regions allocated on the heap.
-\item[---]\lstinline|StackSpaceRegion|\index{MemRegion!StackSpaceRegion|textbf} --- a base class for two different memory spaces:
+\item[---]\lstinline|HeapSpaceRegion|\index{MemRegion!HeapSpaceRegion|textbf}~--- holding all regions allocated on the heap.
+\item[---]\lstinline|StackSpaceRegion|\index{MemRegion!StackSpaceRegion|textbf}~--- a base class for two different memory spaces:
 \medskip
 \begin{itemize}
 \item[---]\lstinline|StackArgumentsSpaceRegion|
 \index{MemRegion!StackArgumentsSpaceRegion|textbf} --- memory space of function call arguments,
-\item[---]\lstinline|StackLocalsSpaceRegion|\index{MemRegion!StackLocalsSpaceRegion|textbf} --- memory space for local variables.
+\item[---]\lstinline|StackLocalsSpaceRegion|\index{MemRegion!StackLocalsSpaceRegion|textbf}~--- memory space for local variables.
 \end{itemize}
-Note that unlike other memory spaces, there may be multiple \lstinline|StackSpaceRegion| instances --- one for every \lstinline|StackFrameContext|\index{LocationContext!StackFrameContext}.
-\item[---]\lstinline|UnknownSpaceRegion|\index{MemRegion!UnknownSpaceRegion|textbf} --- whenever the analyzer has no idea where the region is actually stored.
+Note that unlike other memory spaces, there may be multiple \lstinline|StackSpaceRegion| instances~--- one for every \lstinline|StackFrameContext|\index{LocationContext!StackFrameContext}.
+\item[---]\lstinline|UnknownSpaceRegion|\index{MemRegion!UnknownSpaceRegion|textbf}~--- whenever the analyzer has no idea where the region is actually stored.
 \end{itemize}
 
 Memory spaces are important because regions are considered different if they are inside different memory spaces, even if all other traits of these regions are equal. For example, regions of the function parameter variable in different calls are different because their memory spaces are defined by different stack frame contexts, even though variable declaration is the same.
@@ -2294,12 +2298,12 @@ Memory spaces are important because regions are considered different if they are
 There are only three kinds of untyped regions:
 
 \begin{itemize}
-\item[---] \lstinline|AllocaRegion|\index{MemRegion!AllocaRegion|textbf} --- a region allocated on the stack by calling the \lstinline|alloca()| function of the standard C library. This region is untyped because this function allocates raw data.
+\item[---] \lstinline|AllocaRegion|\index{MemRegion!AllocaRegion|textbf}~--- a region allocated on the stack by calling the \lstinline|alloca()| function of the standard C library. This region is untyped because this function allocates raw data.
 
 \lstinline{AllocaRegion} always resides in \lstinline|StackLocalsSpaceRegion|\index{MemRegion!StackLocalsSpaceRegion}.
-\item[---] \lstinline|SymbolicRegion|\index{MemRegion!SymbolicRegion|textbf} --- a region pointed to by a pointer, value of which is a symbolic expression. This region is untyped, because pointers can be casted freely in C, and you cannot be sure that type of data it points to matches the pointer type.
+\item[---] \lstinline|SymbolicRegion|\index{MemRegion!SymbolicRegion|textbf}~--- a region pointed to by a pointer, value of which is a symbolic expression. This region is untyped, because pointers can be casted freely in C, and you cannot be sure that type of data it points to matches the pointer type.
 
-\lstinline|SymbolicRegion| class deserves special attention due to the fact that pointer symbols, even though their type is a pointer type, are technically \lstinline|NonLoc|. So the purpose of the \lstinline|SymbolicRegion| class is to express and deliver the \lstinline|Loc| part of things --- a region that is created after a pointer value, rather than vice versa.
+\lstinline|SymbolicRegion| class deserves special attention due to the fact that pointer symbols, even though their type is a pointer type, are technically \lstinline|NonLoc|. So the purpose of the \lstinline|SymbolicRegion| class is to express and deliver the \lstinline|Loc| part of things~--- a region that is created after a pointer value, rather than vice versa.
 
 If a sub-region has \lstinline|SymbolicRegion| as its base region, the region is said to have \emph{symbolic base}, and the symbolic region is said to be the symbolic base of that region. The  \lstinline|getSymbolicBase()|\index{MemRegion!getSymbolicBase()|textbf} method of \lstinline|MemRegion| returns a pointer to the symbolic base region or a null pointer if the base isn't symbolic. This method is often useful when you need to figure out if a complex sub-region is actually related to a certain pointer symbol.
 
@@ -2323,7 +2327,7 @@ Note that \lstinline|CXXThisRegion| is not the object itself, but merely a stack
 \lstinline|CXXTempObjectRegion| may reside in \lstinline|StackLocalsSpaceRegion|\index{MemRegion!StackLocalsSpaceRegion}, and it may also sometimes reside in \lstinline|GlobalInternalSpaceRegionKind|\index{MemRegion!GlobalInternalSpaceRegionKind}, when the \lstinline|getCXXStaticTempObjectRegion()| method of the \lstinline|MemRegionManager|\index{MemRegionManager} was used for creating it.
 
 \item[---]\lstinline|CompoundLiteralRegion|\index{MemRegion!CompoundLiteralRegion|textbf} represents memory region of an initializer-list (``compound literal'') object.
-\item[---]\lstinline|StringRegion|\index{MemRegion!StringRegion|textbf} --- a region of a string literal.
+\item[---]\lstinline|StringRegion|\index{MemRegion!StringRegion|textbf}~--- a region of a string literal.
 \end{itemize}
 
 \subsubsection{Typed base regions with untyped values}
@@ -2331,7 +2335,7 @@ Note that \lstinline|CXXThisRegion| is not the object itself, but merely a stack
 There are a few special kinds of regions that inherit from \lstinline|TypedRegion| but not \lstinline|TypedValueRegion|. These regions have well-defined ``location'' (pointer) type, however the type of the values they store is not defined as the pointee type of the location type.
 
 \begin{itemize}
-\item[---] \lstinline|BlockDataRegion|\index{MemRegion!BlockDataRegion|textbf} --- a base region for representing data stored inside blocks (the non-standard Apple~Inc. extension to C and C++). These regions handle both code and data for the block, and implement methods for working with closures.
+\item[---] \lstinline|BlockDataRegion|\index{MemRegion!BlockDataRegion|textbf}~--- a base region for representing data stored inside blocks (the non-standard Apple~Inc. extension to C and C++). These regions handle both code and data for the block, and implement methods for working with closures.
 \item[---]\lstinline|CodeTextRegion|\index{MemRegion!CodeTextRegion|textbf} represents memory regions of program code rather than data. There are two sub-kinds: \lstinline|FunctionTextRegion|\index{MemRegion!FunctionTextRegion|textbf} for function code, often used for representing function pointer values in the analyzer, and \lstinline|BlockTextRegion|\index{MemRegion!BlockTextRegion|textbf} for block code.
 \end{itemize}
 
@@ -2413,7 +2417,7 @@ However, there is another compound value used in the analyzer, which appears muc
 \item[---] a copy of \emph{the whole} \lstinline|Store|\index{Store} object, obtained from the \lstinline|ProgramState|\index{ProgramState} in which it was created.
 \end{itemize}
 
-Essentially, \lstinline|nonloc::LazyCompoundVal| is a performance optimization for the analyzer. Because \lstinline|Store| is immutable\index[notion]{Immutability}, creating a \lstinline|nonloc::LazyCompoundVal| is a very cheap operation. Note that the \lstinline|Store| contains all region bindings in the program state, not only related to the region. Later, if necessary, such value can be unpacked --- eg. when it is assigned to another variable.
+Essentially, \lstinline|nonloc::LazyCompoundVal| is a performance optimization for the analyzer. Because \lstinline|Store| is immutable\index[notion]{Immutability}, creating a \lstinline|nonloc::LazyCompoundVal| is a very cheap operation. Note that the \lstinline|Store| contains all region bindings in the program state, not only related to the region. Later, if necessary, such value can be unpacked~--- eg. when it is assigned to another variable.
 
 \subsection{Special values}
 
@@ -2449,16 +2453,16 @@ However, classification of symbolic values is very rarely important. Most of the
 \item[---] \lstinline|RangeConstraintManager|\index{RangeConstraintManager} uses symbolic binary-expression classes to significantly simplify const\-raint conditions, eg. $(x + 3) > 5$ is easily transformed into $x > 2$, which would be hard if the symbol representing $(x + 3)$ didn't remember anything about $x$ or $3$.
 \item[---] Taint propagates automatically from tainted regions to data symbols representing their values, via the reference to the region stored inside the symbol.
 \item[---] At any moment, we can easily trace the origin of the symbol in a high-level manner. If we want to figure out what conditions are necessary in order to replicate the bug found by the analyzer, we can often do so by looking at the symbols inside the program state.
-\item[---] It is also often useful for debugging, and sometimes --- very rarely --- the internal logic of the checker itself would rely on symbol kinds. However, you should know what you're doing; this technique is often misused or used for quick and dirty incorrect heuristics. This subsection should give you a rough idea of what symbols are and what symbols aren't.
+\item[---] It is also often useful for debugging, and sometimes~--- very rarely~--- the internal logic of the checker itself would rely on symbol kinds. However, you should know what you're doing; this technique is often misused or used for quick and dirty incorrect heuristics. This subsection should give you a rough idea of what symbols are and what symbols aren't.
 \end{itemize}
 
 Symbol values always have a type, which is an integer or a pointer. 
 
 The \lstinline|getAsSymbol()|\index{SVal!getAsSymbol()|textbf} method of the \lstinline|SVal| class works with the following \lstinline|SVal| kinds:
 \begin{enumerate}
-\item[---]\lstinline|nonloc::SymbolVal|\index{SVal!NonLoc!nonloc::SymbolVal|textbf} --- the value which ``is'' the symbol ``itself''.
+\item[---]\lstinline|nonloc::SymbolVal|\index{SVal!NonLoc!nonloc::SymbolVal|textbf}~--- the value which ``is'' the symbol ``itself''.
 \item[---]\lstinline|loc::MemRegionVal|\index{SVal!Loc!loc::MemRegionVal}, if the region inside it is a \lstinline|SymbolicRegion| (a ``symbolic pointer'' --- because \lstinline|nonloc::SymbolVal| is always \lstinline|NonLoc|, this method represents pointers as \lstinline|Loc| values). In this case, the method would return the symbol for which the region is constructed. If the optional boolean parameter of \lstinline|getAsSymbol()| is set to \lstinline|true|, this method would also work on arbitrary regions with symbolic base.
-\item[---]\lstinline|nonloc::LocAsInteger|\index{SVal!NonLoc!nonloc::LocAsInteger} --- extracting a symbolic pointer from the underlying \lstinline|loc::MemRegionVal|, if any.
+\item[---]\lstinline|nonloc::LocAsInteger|\index{SVal!NonLoc!nonloc::LocAsInteger}~--- extracting a symbolic pointer from the underlying \lstinline|loc::MemRegionVal|, if any.
 \end{enumerate}
 
 
@@ -2523,7 +2527,7 @@ SVal StrLength = SVB.getMetadataSymbolVal(CStringChecker::getTag(),
 
 \lstinline|SymbolMetadata| is made with the following ingredients:
 \begin{itemize}
-\item[---]A symbol tag --- a \lstinline|void*| that uniquely identifies a kind of metadata symbols. In this example, the unique identifier of the checker itself, returned by the static \lstinline|getTag()|\index{Checker!getTag()|textbf} method of the \lstinline|Checker| object, is being used.
+\item[---]A symbol tag~--- a \lstinline|void*| that uniquely identifies a kind of metadata symbols. In this example, the unique identifier of the checker itself, returned by the static \lstinline|getTag()|\index{Checker!getTag()|textbf} method of the \lstinline|Checker| object, is being used.
 \item[---]The parent region, to which the metadata is tied; in our case, it is the region of the string for which the length is defined.
 \item[---]An AST expression on which the symbol appeared.
 \item[---]The expected type of the symbol. As expected from an \lstinline|SValBuilder| method, if this type is \lstinline|Loc|, then the resulting \lstinline|SVal| would be of type \lstinline|loc::MemRegionVal|, carrying a \lstinline|SymbolicRegion| wrapping the symbol.
