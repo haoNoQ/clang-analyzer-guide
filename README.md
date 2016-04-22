@@ -3,6 +3,12 @@
 An easy guide to Clang Static Analyzer extensions.
 
 
+## Downloads:
+
+Binary releases are available right here on github:
+https://github.com/haoNoQ/clang-analyzer-guide/releases
+
+
 ## Compiling:
 
 On Linux, Install `dia`, `rsvg-convert`, and most of LaTeX, then run the
