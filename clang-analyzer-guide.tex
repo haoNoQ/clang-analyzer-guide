@@ -1,0 +1,2596 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{float}
+\usepackage{multicol}
+
+% Images
+\usepackage{graphicx}
+\def\imgscale{0.20}
+
+% Tables
+\usepackage{array}
+\renewcommand{\arraystretch}{2}
+
+% Index Module
+\usepackage{imakeidx}
+\makeindex[intoc,title=Index of classes]
+\makeindex[intoc,name=notion,title=Index of notions]
+
+% Fonts And Paragraph Styles
+\usepackage[a4paper, total={7.3in, 10.1in}]{geometry}
+\setlength\parindent{0pt}
+\setlength\parskip{1em}
+\renewcommand*{\familydefault}{\sfdefault}
+\usepackage[T1]{fontenc}
+\usepackage[default]{sourcesanspro}
+\usepackage{sfmath}
+\clubpenalty=10000
+\widowpenalty=10000
+\usepackage{dingbat}
+
+% No-Line-Break Sections That Hold The Listings Together
+\newenvironment{nobr}{\begin{minipage}{\textwidth}\setlength\parskip{1em}
+}{\end{minipage}\ignorespacesafterend}
+
+% Fancy Enumerations
+\usepackage{enumitem}
+\setlist{topsep=-3pt}
+
+
+% Colorful Section Styles
+\setcounter{section}{-1}
+\usepackage[usenames,dvipsnames]{color}
+\definecolor{Section}{RGB}{0, 64, 128}
+\definecolor{SectionNumber}{RGB}{255, 255, 255}
+\usepackage{titlesec}
+\usepackage{needspace}
+\titleformat{\section}
+  {\nopagebreak\parskip0.2em\color{Section}\titlerule\normalfont\Large\bfseries}
+  {\parindent-2em\fcolorbox{Section}{Section}{\color{SectionNumber}\quad\thesection.\quad}}
+  {1em}{}
+\titleformat{\subsection}
+  {\nopagebreak\parskip0.2em\color{Section}\titlerule\normalfont\large\bfseries}
+  {\fcolorbox{Section}{Section}{\color{SectionNumber}\ \ \thesubsection.\ \ }\nopagebreak}
+  {1em}{}
+\titleformat{\subsubsection}
+  {\nopagebreak\parskip0.2em\color{Section}\titlerule\normalfont\bfseries}
+  {\fcolorbox{Section}{Section}{\color{SectionNumber}\thesubsubsection.}\nopagebreak}
+  {1em}{}
+
+% Fancy Listings
+\usepackage{listings}
+\definecolor{InlineListing}{RGB}{0, 64, 128}
+\lstset{basicstyle=\ttfamily\color{InlineListing}}
+\definecolor{Command}{RGB}{0, 0, 0}
+\definecolor{CommandOutput}{RGB}{128, 128, 128}
+\definecolor{Console}{RGB}{240, 240, 240}
+\definecolor{Executable}{RGB}{0, 96, 0}
+\definecolor{Prompt}{RGB}{0, 64, 128}
+\definecolor{Rule}{RGB}{192, 192, 192}
+\lstdefinestyle{commandline}{
+  aboveskip=1.0em,
+  backgroundcolor=\color{Console},
+  basicstyle=\ttfamily\color{Prompt}\footnotesize,
+  belowskip=0.0em,
+  breaklines=false,
+  captionpos=b,
+  emptylines=1,
+  frame=single,
+  moredelim=**[is][\color{Command}]{@}{@},
+  moredelim=**[is][\color{Executable}]{@@}{@@},
+  moredelim=**[is][\color{CommandOutput}]{@@@}{@@@},
+  rulecolor=\color{Rule},
+  xleftmargin=1.9em,
+  xrightmargin=0.3em,
+}
+\definecolor{Background}{RGB}{240, 240, 240}
+\definecolor{Code}{RGB}{0, 0, 0}
+\definecolor{Comment}{RGB}{0, 128, 128}
+\definecolor{Keyword}{RGB}{0, 0, 128}
+\definecolor{String}{RGB}{192, 0, 192}
+\lstdefinestyle{cplusplus}{
+  aboveskip=1.5em,
+  backgroundcolor=\color{Background},
+  basicstyle=\ttfamily\color{Code}\footnotesize,
+  belowskip=0.0em,
+  breaklines=false,
+  captionpos=b,
+  commentstyle=\color{Comment},
+  emptylines=1,
+  frame=single,
+  keywordstyle=\color{Keyword},
+  language=C++,
+  numbers=left,
+  rulecolor=\color{Rule},
+  showstringspaces=false,
+  stringstyle=\color{String},
+  xleftmargin=1.9em,
+  xrightmargin=0.3em,
+}
+
+% Hyper Reference Styles
+\definecolor{Url}{RGB}{0, 64, 128}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    linkcolor={Url},
+    citecolor={Url},
+    urlcolor={Url}
+}
+
+% Fancy Table Of Contents
+\usepackage{tocloft}
+\renewcommand\cftbeforesecskip{10pt}
+\renewcommand\cftbeforesubsecskip{0pt}
+\renewcommand\cftsubsecafterpnum{\vskip0pt}
+
+\begin{document}
+
+\begin{center}
+\hrule\bigskip\bigskip
+{\Huge\textsc{Clang\ \ Static\ \ Analyzer}}
+\bigskip
+
+{\Large A\ \ Checker\ \ Developer's\ \ Guide}
+\bigskip
+
+{Rev. --- \today}
+\bigskip\bigskip\hrule
+
+\end{center}
+
+\newpage
+\tableofcontents
+
+\newpage
+\section{Preface}
+
+The early draft of this document was composed mostly by Artem Dergachev during his work for the Samsung Research \& Development institute in Moscow. This document is licensed under the Creative Commons Attribution~4.0 International License. To view a copy of this license, visit \url{http://creativecommons.org/licenses/by/4.0/}.
+{\begin{center}\includegraphics{license.png}\end{center}}
+
+The author is greatful to everybody who contributed to this guide by finding mistakes and omissions and giving valuable suggestions --- and this list would probably grow as new revisions of this guide are released --- in particular, to Alexey Sidorin, Julia Trofimovich, and Kirill Romanenkov.
+
+The guide is still incomplete at parts, and it would need updates in case of changes in the analyzer core, which would inevitably occur at times. Additionally, because the author was not a native speaker of English, any suggestions on improving the grammar aspect of the guide are warmly welcome.
+
+Below is a rough to-do list of stuff that is not yet properly explained in the guide, but would be considered useful to have, in no particular order:
+\begin{multicols}{2}
+\begin{enumerate}
+ \item Direct and default bindings in the region store.
+ \item Recent changes in work with live and dead symbols.
+ \item The \lstinline|WasInlined| attribute of the checker context.
+ \item The newly introduced \lstinline|CodeSpaceRegion| memory space.
+ \item The syntax for adding bug reporter visitors to the report.
+ \item How to read the \lstinline|stderr| dump of the program state.
+ \item The \lstinline|loc::GotoLabel| value class.
+ \item How to use the AST parent map.
+ \item Use \lstinline|check::ASTDecl<>|, probably for the whole translation unit, instead of \lstinline|check::EndOfTranslationUnit| for syntax-only checks.
+ \item Symbols of structural type.
+ \item A picture of how super-regions of any memory region usually look.
+ \item Add a picture of how path-sensitive bug reports look, eg. the HTML ones.
+ \item Describe more Objective-C-related stuff.
+ \item Using the \lstinline|SVal| visitor.
+ \item Writing tests.
+\end{enumerate}
+\end{multicols}
+
+The author welcomes suggestions, bug reports, pull-requests, forks, and whatever may come out of it, on github at \url{https://github.com/haonoq/clang-analyzer-guide}!
+
+\newpage
+\subsection{FAQ: a quick guide through the guide}
+
+\begin{itemize}
+\item[\textbf{Q:}] \emph{Okay, so how do I write CSA checkers?}
+\item[\textbf{A:}] For a step-by-step quick start guide on coding checkers, see subsection \ref{subsec:coding_intro}.
+\end{itemize}
+\medskip
+
+\begin{itemize}
+\item[\textbf{Q:}] \emph{Reference guides are boring. I prefer learning by example. Should I keep reading?}
+\item[\textbf{A:}] That's not really a reference guide, but rather a free-hand introduction to Clang Static Analyzer. You'd encounter code samples and useful snippets on almost every page. We did not try to copy the official Clang doxygen, which you would definitely refer to during your work on CSA checkers. However, we also strongly advise you to search through the official checker source code for finding how different classes and methods are used in practice.
+\end{itemize}
+\medskip
+
+\begin{itemize}
+\item[\textbf{Q:}] \emph{This guide is quite big. My checker only needs to find calls to a certain function, and it shouldn't be hard. Do I really need to read the whole guide to implement it?}
+\item[\textbf{A:}] For finding simple code patterns, an AST matcher would easily do the job. Probably the example in subsection~\ref{subsec:ast_matchers} is all you need to know.
+\end{itemize}
+\medskip
+
+\begin{itemize}
+\item[\textbf{Q:}] \emph{Now I have a real problem. My program crashes, due to double-close of} \lstinline|FlyingElephantDescriptor|\emph{, once in a few weeks, and I badly want to catch and debug it. Please help!}
+\item[\textbf{A:}] You came to the right place! If you want a checker that finds a program execution paths on which a certain sequence of events, such as double-free, occurs, then you need to implement a path-sensitive checker. You would probably need to read section \ref{sec:path_sensitive}, most importantly subsections~\ref{subsec:program_state} and~\ref{subsec:program_state_2}, paying a lot of attention in~\ref{subsubsec:gdm}, and probably look through subsection~\ref{subsec:path_sensitive_callbacks} to find the right callback to hook into.
+\end{itemize}
+\medskip
+
+\begin{itemize}
+\item[\textbf{Q:}] \emph{So, how do I know if I need a path-sensitive or path-insensitive checker?}
+\item[\textbf{A:}] It depends on what information you need the analyzer core to provide. If you want to understand this matter in-depth, see section \ref{sec:data_structures}. Most of the time, you'd pick a path-sensitive checker. Only if your check is really simple, would you want to rely on AST-based checkers.
+\end{itemize}
+\medskip
+
+\begin{itemize}
+\item[\textbf{Q:}] \emph{My path-sensitive bug report is too short, I cannot figure out what's going on!}
+\item[\textbf{A:}] By default, the analyzer doesn't draw path through sub-functions that returned before the bug was found. They only show the event of the bug, and decisions that lead to it in the same function or in its direct callers. If you need to highlight other events, probably inside sub-functions, then you need to implement a bug report visitor, as described in subsection~\ref{subsec:bug_visitors}.
+\end{itemize}
+\medskip
+
+\begin{itemize}
+\item[\textbf{Q:}] \emph{Wait a minute, section} \ref{sec:data_structures} \emph{also mentions CFG-based analysis. When do I use this one?}
+\item[\textbf{A:}] Almost never, unless you really know what you're doing, and in this case you almost certainly don't need this guide. Even though it'd be great to have a rough idea of what CFG is and how it looks, most of the time path-sensitive checkers turn out to do the same job much easier.
+\end{itemize}
+\medskip
+
+\begin{itemize}
+\item[\textbf{Q:}] \emph{I'm reading the guide randomly, and I've no idea what you mean by ``GDM''.}
+\item[\textbf{A:}] You can always refer to the alphabetical index at the end of  the guide. In fact, because the index is quite short, you may also read through it to find things you missed. The index of classes also highlights most useful methods in CSA classes and points to usage examples for each class or method across the guide.
+\end{itemize}
+\medskip
+
+\begin{itemize}
+\item[\textbf{Q:}] \emph{Your path-sensitive engine is fantastic! How does it work?}
+\item[\textbf{A:}] The easiest way to explain how it works is probably say ``it constructs an exploded graph''. Even though the whole section \ref{sec:path_sensitive} is about how the path-sensitive engine works, you may also refer to the explanation of the exploded graph in subsection \ref{subsec:exploded_graph} for clearer understanding.
+\end{itemize}
+\medskip
+
+
+\newpage
+\section{Introduction to the Clang Static Analyzer}\label{sec:intro}
+
+The Clang compiler, based on the LLVM infrastructure, provides much more than a way to turn a C/C++/Objective-C code into a binary executable file. Clang allows reliably hooking onto the compilation process and obtaining exhaustive information of the data structures the compiler generates on each phase of the compilation. In other words, if you want to know more about your program, the compiler is the best person to ask --- and Clang is open to answer your questions. Assuming you ask the right questions, that is.
+
+One of the applications for Clang tools is automatically finding defects in programs, providing much more warnings than your compiler would. For instance, the \lstinline|clang-tidy| tool finds style issues and unsafe or potentially unportable constructs by observing the syntax used in the program.
+
+\emph{Clang Static Analyzer} is another tool that finds defects in programs. By exploring the program source code, this particular tool tries to execute parts of the program without compiling them or running the program --- as if reading the source code and imagining what would happen if it runs --- and reports run-time errors that would occur in such imaginary run-time. Because actual behavior of any real-world program depends on external factors, such as input values, random numbers, and behavior of library components (for which source code is not always available!), the analyzer engine denotes unknown values with algebraic symbols, and performs symbolic computations based on these symbols. It also discovers conditions on the symbolic values that lead the program towards the error.
+
+As a result, Clang Static Analyzer is capable of finding deep bugs that occur only on rare program paths. These paths might have been missed by the manual testers or the automated test suites. Upon finding a bug, the analyzer draws the whole path that lead to the bug, with jump directions on each conditional statement.
+
+However, the analyzer can only find bugs that it has been specifically engineered to find. Otherwise, upon encountering the problem, the analysis runs further and doesn't notice anything. For every particular kind of defects the analyzer finds, such as dereference of a null pointer or buffer overflow, there is a special module --- a \emph{checker}, that reacts on such defects during analysis.
+
+So, essentially, the analyzer core is responsible for executing the program in a symbolic manner, and checkers subscribe on events they're interested in, check various assumptions on symbolic values at these events, and throw warnings if these assumptions are found to fail on the given path.
+
+It means that you may want to not only use the analyzer to finds defects, but also adapt it to your particular project. For instance, you may want to enforce rules specific to your project, or find misuses of a specific library API you are using. In order to do that, you may find yourself wanting to write a new checker module for the analyzer. And no matter how easy it may be --- because Clang Static Analyzer is a very easy tool --- this guide should be able to help you.
+
+\begin{nobr}
+\subsection{MainCallChecker --- a simple tutorial checker}
+
+For a quick start, we shall write a simple, though probably not very useful, static analyzer checker. The checker would find violations of the following rule defined by the C++ standard:
+
+\qquad\textbf{basic.start.main.3:} The function \lstinline|main| shall not be used within a program.
+\end{nobr}
+
+In other words, the \lstinline|main()| function cannot be recursive; the program should never call \lstinline|main()|, otherwise behavior is undefined. Finding such defect sounds easy at a glance: just see if there's a function call in the program, and the function has name ``main''. Well, not in real life. The programmer may put a pointer to \lstinline|main| into a variable, pass this pointer around, and then accidentally call a function by pointer, which accidentally turns out to point to \lstinline|main|:
+
+\begin{nobr}
+\begin{lstlisting}[style=cplusplus,title=\lstinline|Example_Test.c|,numbers=none]
+typedef int (*main_t)(int, char **);
+int main(int argc, char **argv) {
+  main_t foo = main;
+  int exit_code = foo(argc, argv);  // actually calls main()!
+  return exit_code;
+}
+\end{lstlisting}
+\end{nobr}
+
+So even in this simple case, the analyzer's path-sensitive engine has an advantage over a simple syntax-based check. Let's see if we can detect the error in \lstinline|Example_Test.c| with the help of the static analyzer.
+
+All right, you got me: even putting the pointer to \lstinline|main| into a variable actually already means that \lstinline|main| was ``used'' within the program. But for educational purposes, we shall find out that in fact it is actually called.
+
+\begin{nobr}
+First, let us provide a definition of the checker in the list of checkers. Open up \lstinline|lib/StaticAnalyzer/Checkers/Checkers.td| in the clang source tree, and add a simple description of the checker somewhere too, say, \lstinline|alpha.core| package of checkers:
+\begin{lstlisting}[style=commandline,title=\lstinline|@Checkers.td@|]
+@@@...@@@
+ HelpText<"Check for assignment of a fixed address to a pointer">,
+ DescFile<"FixedAddressChecker.cpp">;
+
+@@def MainCallChecker : Checker<"MainCall">,@@
+@@ HelpText<"Check for calls to main">,@@
+@@ DescFile<"MainCallChecker.cpp">;@@
+
+def PointerArithChecker : Checker<"PointerArithm">,
+ HelpText<"Check for pointer arithmetic on locations other than array elements">,
+ DescFile<"PointerArithChecker">;
+@@@...@@@
+\end{lstlisting}
+\end{nobr}
+
+\begin{nobr}
+After re-compiling Clang, this would make the checker appear in the list of checkers:
+\begin{lstlisting}[style=commandline]
+~ $ @clang -cc1 -analyzer-checker-help@
+OVERVIEW: Clang Static Analyzer Checkers List
+
+USAGE: -analyzer-checker <CHECKER or PACKAGE,...>
+
+CHECKERS:
+@@@...@@@
+  alpha.core.FixedAddr            Check for assignment of a fixed address to a p
+ointer
+  alpha.core.IdenticalExpr        Warn about unintended use of identical express
+ions in operators
+  @@alpha.core.MainCall             Check for calls to main@@
+  alpha.core.PointerArithm        Check for pointer arithmetic on locations othe
+r than array elements
+  alpha.core.PointerSub           Check for pointer subtractions on two pointers
+ pointing to different memory chunks
+@@@...@@@
+\end{lstlisting}
+\end{nobr}
+
+In this example, ``\lstinline|alpha.core.MainCallChecker|'' is the name of the checker in the registry. Once the checker is registered, it can be enabled via CSA command-line options by the given name, and also the relevant short description line appears in the analyzer checker help. ``\lstinline|alpha.core|'' is the category of the checker. For example, \lstinline|-analyzer-checker alpha.core| would enable all checkers in the \lstinline|alpha.core| category.
+
+\begin{nobr}
+Then, add the checker code to the \lstinline|lib/StaticAnalyzer/Checkers/CMakeLists.txt| file, so that its source code got eventually compiled on the next rebuild of Clang:
+\begin{lstlisting}[style=commandline,title=\lstinline|@CMakeLists.txt@|]
+@@@...@@@
+  LocalizationChecker.cpp
+  MacOSKeychainAPIChecker.cpp
+  MacOSXAPIChecker.cpp
+  @@MainCallChecker.cpp@@
+  MallocChecker.cpp
+  MallocOverflowSecurityChecker.cpp
+@@@...@@@
+\end{lstlisting}
+\end{nobr}
+
+\begin{nobr}
+Finally, write some code in \lstinline|lib/StaticAnalyzer/Checkers/MainCallChecker.cpp| that we will soon explain:
+\begin{lstlisting}[style=cplusplus,title=\lstinline|MainCallChecker.cpp|]
+#include "ClangSACheckers.h"
+#include "clang/StaticAnalyzer/Core/BugReporter/BugType.h"
+#include "clang/StaticAnalyzer/Core/Checker.h"
+#include "clang/StaticAnalyzer/Core/PathSensitive/CallEvent.h"
+#include "clang/StaticAnalyzer/Core/PathSensitive/CheckerContext.h"
+
+using namespace clang;
+using namespace clang::ento;
+
+namespace {
+class MainCallChecker : public Checker<check::PreCall> {
+  mutable std::unique_ptr<BugType> BT;
+
+public:
+  void checkPreCall(const CallEvent &Call, CheckerContext &C) const;
+};
+}
+
+void MainCallChecker::checkPreCall(const CallEvent &Call,
+                                   CheckerContext &C) const {
+  if (const IdentifierInfo *II = Call.getCalleeIdentifier())
+    if (II->isStr("main")) {
+      if (!BT)
+        BT.reset(new BugType(this, "Call to main", "Example checker"));
+      ExplodedNode *N = C.generateErrorNode();
+      auto Report = llvm::make_unique<BugReport>(*BT, BT->getName(), N);
+      C.emitReport(std::move(Report));
+    }
+}
+
+void ento::registerMainCallChecker(CheckerManager &Mgr) {
+  Mgr.registerChecker<MainCallChecker>();
+}
+\end{lstlisting}
+\end{nobr}
+
+\begin{nobr}
+After compiling clang, you should be able to run the static analyzer, enable the checker, and see the warning:
+\begin{lstlisting}[style=commandline]
+~ $ @clang -cc1 -analyze -analyzer-checker=alpha.core Example_Test.c@
+Example_Test.c:4:19: warning: Call to main
+  int exit_code = foo(argc, argv); // actually calls main()!
+                  @@^~~~~~~~~~~~~~~@@
+1 warning generated.
+\end{lstlisting}
+\end{nobr}
+
+\subsection{Checker example code explained}\label{subsec:coding_intro}
+
+Now let us figure out how \lstinline|MainCallChecker| works internally. \lstinline|MainCallChecker| is a \emph{path-sensitive} check\-er: it can detect how values flow through variables on different program paths, and understand which execution paths are taken based on these values. We have already demonstrated this in \lstinline|Example_Test.c|, where we call a function after storing a pointer to this function in a variable \lstinline|foo|.
+
+\begin{nobr}
+\subsubsection{Declaring a checker class}
+
+A CSA checker is implemented by inheriting from a class template \lstinline|Checker<...>|\index{Checker|textbf}, in which template parameters indicate the list of callbacks on which the checker subscribes:
+
+\begin{lstlisting}[style=cplusplus,firstnumber=10]
+namespace {
+class MainCallChecker : public Checker<check::PreCall> {
+  mutable std::unique_ptr<BugType> BT;
+
+public:
+  void checkPreCall(const CallEvent &Call, CheckerContext &C) const;
+};
+}
+\end{lstlisting}
+\end{nobr}
+
+Checker class definitions are usually put into anonymous namespaces to avoid name collisions upon loading multiple checkers into the analyzer.
+
+\lstinline|MainCallChecker| subscribes to the \lstinline|check::PreCall| event. The \lstinline|checkPreCall(...)| callback\index{Checker!check::PreCall} defined inside the checker will be called every time the path-sensitive engine of the analyzer encounters a function call and is about to analyze~it.
+
+\begin{nobr}
+\subsubsection{Implementing checker callbacks}
+
+Now let us look at the implementation of the \lstinline|checkPreCall(...)| callback:
+\begin{lstlisting}[style=cplusplus,firstnumber=19]
+void MainCallChecker::checkPreCall(const CallEvent &Call,
+                                   CheckerContext &C) const {
+  if (const IdentifierInfo *II = Call.getCalleeIdentifier())
+    if (II->isStr("main")) {
+      if (!BT)
+        BT.reset(new BugType(this, "Call to main", "Example checker"));
+      ExplodedNode *N = C.generateErrorNode();
+      auto Report = llvm::make_unique<BugReport>(*BT, BT->getName(), N);
+      C.emitReport(std::move(Report));
+    }
+}
+\end{lstlisting}
+\end{nobr}
+
+The \lstinline|CallEvent| structure\index{CallEvent} available at the callback contains all the data on the function call event the analyzer core managed to gather for us. In particular, it contains information about the callee function, and values of the arguments.
+
+Because our checker is path-sensitive, this information is a lot more than you may obtain by looking at the syntax tree. In particular, it may know the callee identifier even if a function is called by function pointer, because the analyzer core have predicted the value of this pointer on this execution path. On line 21, we use this to obtain the \emph{identifier} (\lstinline|IdentifierInfo| structure) for the callee function from the \lstinline|CallEvent| structure. In case we cannot obtain such info, that is, if \lstinline|getCalleeIdentifier()|\index{CallEvent!getCalleeIdentifier()} returns a \lstinline|NULL| pointer, we return from our callback and continue the analysis.
+
+Now, on line 22, we see if the identifier we encountered has the name ``\lstinline|main|''. We are only interested in functions with the name ``\lstinline|main|'', so all further checks are made under this assumption.
+
+\subsubsection{Throwing bug reports}
+
+That's it for the checker logic. What remains is to produce a bug report for the user. For this, we use another object available in our callback, the \lstinline|CheckerContext|\index{CheckerContext|textbf} structure. This structure is a Swiss Army knife that contains various functions checkers can use to obtain information on the analysis and affect the analysis flow.
+
+There's a variable \lstinline|BT|\index{BugType} in the checker, which stores a ``bug type'' for the checker --- a common way to identify bugs belonging to different checkers. A checker may have multiple bug types; they are traditionally stored and re-used inside the checker for performance. On line 24, the checker initializes its bug type structure \lstinline|BT| as a bug called ``Call to main'', within category ``Example checker'', unless it is already initialized.
+
+On line 25, we use \lstinline|CheckerContext| to generate a \emph{sink node}\index[notion]{Exploded Node!Sink Node}\index{CheckerContext!generateSink()}, which means that the program would most likely crash after encountering this defect, and it is pointless to continue the analysis beyond this point. The node itself represents a point in the execution path. It is not necessary for the checker to stop the analysis once it finds a defect, if the defect is not critical.
+
+Finally, on line 26, the checker creates a new \lstinline|BugReport|\index{BugReport|textbf} object. The report is thrown \emph{against} the sink node we generated before. \lstinline|BugReport| also contains the warning message, which in our case coincides with the bug type name.
+
+Then we pass the report back to the \lstinline|CheckerContext| using the \lstinline|emitReport(...)|\index{CheckerContext!emitReport()} method. Reports would be gathered together, de-duplicated, and displayed to the user in the preferred manner.
+
+\begin{nobr}
+\subsubsection{Registering the checker}
+
+Finally, there is a small piece of magic code to actually create the checker instance when the analysis starts. You may use this section to disable certain checkers for the whole translation units (eg. checkers  for C++-only defects in plain C files), introduce dependencies between checkers, or to set checker options. The code below creates exactly one instance of the \lstinline|MainCallChecker| to feed upon the events yet to unfold:
+
+\begin{lstlisting}[style=cplusplus,firstnumber=31]
+void ento::registerMainCallChecker(CheckerManager &Mgr) {
+  Mgr.registerChecker<MainCallChecker>();
+}
+\end{lstlisting}\index{CheckerManager}\index{CheckerManager!registerChecker}
+\end{nobr}
+
+\begin{nobr}
+\subsection{Compiling the checker as a standalone module}
+
+We have been compiling the checker inside the Clang source tree. However, it is possible to compile the checker as a shared plugin library instead. In this case, you don't need to modify \lstinline|Checkers.td| or \lstinline|CMakeLists.txt| in order to run the checker; instead, you compile the checker as a standalone library, and load it in run-time.
+\end{nobr}
+
+\begin{nobr}
+The syntax for registering the checker changes in the case of compiling as a plugin. You don't need to include the \lstinline|ClangSACheckers.h| header, but instead you include the \lstinline|CheckerRegistry.h| header:
+\begin{lstlisting}[style=cplusplus,numbers=none]
+#include "clang/StaticAnalyzer/Core/CheckerRegistry.h"
+\end{lstlisting}
+\end{nobr}
+
+\begin{nobr}
+Then we define an externally visible function in our library that would register the checker dynamically in the analyzer's \lstinline|CheckerRegistry|\index{CheckerRegistry|textbf}\index{CheckerRegistry!addChecker()}\index{clang\_registerCheckers()|textbf}:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+extern "C"
+void clang_registerCheckers (CheckerRegistry &registry) {
+  registry.addChecker<MainCallChecker>("alpha.core.MainCallChecker",
+                                       "Checks for calls to main");
+}
+\end{lstlisting}
+\end{nobr}
+
+\begin{nobr}
+The clang API version needs to match the plugin API version. Hence, the checker needs to store its version string in the externally visible \lstinline|clang_analyzerAPIVersionString|\index{clang\_analyzerAPIVersionString|textbf} variable for the purpose of compatibility checking:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+extern "C" const char clang_analyzerAPIVersionString[] =
+    CLANG_ANALYZER_API_VERSION_STRING;
+\end{lstlisting}
+\end{nobr}
+
+Once you load the checker via the usual clang plugin syntax --- \lstinline|clang -cc1 -load Checker.so| --- it would appear as a normal checker in the \lstinline|-analyzer-checker-help| list, and you should be able to enable it via \lstinline|-analyzer-checker|.
+
+
+\subsection{Further reading}
+
+The quick introduction in this section covers only a very little part of Clang Static Analyzer capabilities. There are various ways of learning how to develop CSA checkers efficiently.
+
+Further sections of this guide should give you an idea of how the analyzer works and what sort of information is available for the checkers to use, and cover various technologies and tricks involved in creating a checker.
+
+However, while developing CSA checkers, you would also inevitably consult the \emph{official LLVM\footnote{\url{http://llvm.org/doxygen}} and Clang\footnote{\url{http://clang.llvm.org/doxygen}} documentation}, which contains exhaustive information on classes, functions, and data structures you would regularly encounter.
+
+CSA website contains a quick-start checker development manual\footnote{\url{http://clang-analyzer.llvm.org/checker_dev_manual.html}}. We also cannot avoid mentioning a highly recommended presentation video by CSA developers ``Building a Checker in 24 hours''\footnote{\url{http://llvm.org/devmtg/2012-11/videos/Zaks-Rose-Checker24Hours.mp4}}, which describes how a slightly more complicated path-sensitive checker works.
+
+\newpage
+\section{Kinds of analyses and program representations}\label{sec:data_structures}
+
+The first decision you usually need to make when you create a checker is whether you need path-sensitivity to implement the desired check. Alternatively, you may implement your check by exploring the of the program on syntax level.
+
+Path-sensitive analysis is usually many times slower than compilation. However, most of the time is taken by the analyzer core to construct the necessary data structures; the checkers are usually lightweight, unless some extremely heavy calculations were explicitly required. So if you are already running at least one path-sensitive checker, then adding another path-sensitive checker would not make the analysis significantly slower.
+
+On the contrary, syntax-only analysis is usually as fast as compilation, or even faster, because code generation doesn't take place. However, syntax-level analysis does not gather enough information for most checks.
+
+The easiest way to understand how different kinds of analyses compare to each other is to see how program is represented from the point of view of each kind of analysis.
+
+\begin{nobr}
+As an example, let us construct its \emph{abstract syntax tree}, \emph{control flow graph}, and path-sensitive \emph{exploded graph} for a simple function \lstinline|foo(...)|, which we put into a file called \lstinline|test.c| for further reference:
+
+\begin{lstlisting}[style=cplusplus,title=\lstinline|test.c|]
+void foo(int x) {
+  int y, z;
+  if (x == 0)
+    y = 5;
+  if (!x)
+    z = 6;
+}
+\end{lstlisting}
+\end{nobr}
+
+\subsection{Abstract syntax tree}
+
+Clang \emph{abstract syntax tree}\index[notion]{Abstract Syntax Tree|textbf} (AST)\index[notion]{AST|see{Abstract Syntax Tree}} is the structure produced by the \emph{compiler} frontend and serves as the \emph{intermediate representation} of the program used by Clang. Binary code generation takes place based on AST. Unlike AST of the GCC C/C++ compiler, Clang AST contains not only the minimal information necessary to compile the program correctly, but also complete information about the program source code: each element of the tree remembers its source locations and how exactly it was written in the source, even before preprocessing took place. This makes the AST itself usable as the easiest framework for source-level analysis.
+
+Below is a command-line dump of the abstract syntax tree for \lstinline|test.c|:
+
+\begin{nobr}
+\begin{lstlisting}[style=commandline]
+~ $ @clang -cc1 -ast-dump test.c@ @@@
+@@@TranslationUnitDecl@@@ <<invalid sloc>> <invalid sloc>
+`-@@@FunctionDecl@@@ <test.c:1:1, line:7:1> line:1:6 @foo@ '@@void (int)@@'
+  |-@@@ParmVarDecl@@@ 0x3625c60 <col:10, col:14> col:14 used @x@ '@@int@@'
+  `-@@@CompoundStmt@@@ <col:17, line:7:1>
+    |-@@@DeclStmt@@@ <line:2:3, col:11>
+    | |-@@@VarDecl@@@ 0x3625de0 <col:3, col:7> col:7 used @y@ '@@int@@'
+    | `-@@@VarDecl@@@ 0x3625e50 <col:3, col:10> col:10 used @z@ '@@int@@'
+    |-@@@IfStmt@@@ <line:3:3, line:4:9>
+    | |-<<<NULL>>>
+    | |-@@@BinaryOperator@@@ <line:3:7, col:12> '@@int@@' '@==@'
+    | | |-@@@ImplicitCastExpr@@@ <col:7> '@@int@@' <LValueToRValue>
+    | | | `-@@@DeclRefExpr@@@ <col:7> '@@int@@' lvalue ParmVar 0x3625c60 '@x@' '@@int@@'
+    | | `-@@@IntegerLiteral@@@ <col:12> '@@int@@' @0@
+    | |-@@@BinaryOperator@@@ <line:4:5, col:9> '@@int@@' '@=@'
+    | | |-@@@DeclRefExpr@@@ <col:5> '@@int@@' lvalue Var 0x3625de0 '@y@' '@@int@@'
+    | | `-@@@IntegerLiteral@@@ <col:9> '@@int@@' @5@
+    | `-<<<NULL>>>
+    `-@@@IfStmt@@@ <line:5:3, line:6:9>
+      |-<<<NULL>>>
+      |-@@@UnaryOperator@@@ <line:5:7, col:8> '@@int@@' prefix '@!@'
+      | `-@@@ImplicitCastExpr@@@ <col:8> '@@int@@' <LValueToRValue>
+      |   `-@@@DeclRefExpr@@@ <col:8> '@@int@@' lvalue ParmVar 0x3625c60 '@x@' 'int'
+      |-@@@BinaryOperator@@@ <line:6:5, col:9> '@@int@@' '@=@'
+      | |-@@@DeclRefExpr@@@ <col:5> '@@int@@' lvalue Var 0x3625e50 '@z@' '@@int@@'
+      | `-@@@IntegerLiteral@@@ <col:9> '@@int@@' @6@
+      `-<<<NULL>>>
+\end{lstlisting}
+\end{nobr}
+
+Reading the AST is similar to reading the original program, annotated to display the semantics that weren't necessarily instantly obvious from the raw source code. For instance, you may understand that variable \lstinline|x| on line 3, on which the \lstinline|if| statement argument depends, is actually a parameter of \lstinline|foo(...)|, while variable~\lstinline|y| referenced on line 4 is a local variable declared on line 2 together with \lstinline|z|.
+
+However, while constructing the AST, the compiler does not try to understand and model what exactly is going on in the program. It does not construct different execution paths through the branch statements, or try to predict how different branches interact.
+
+The best thing you can do with AST is to detect unwanted \emph{code patterns}. For example, you may want to avoid C-style casts in your C++ project, you can easily create an AST-based checker that warns on all C-style casts. A bit more complicated example would be ensuring that return value of some function is always checked for error.
+
+The \lstinline|security.InsecureAPI| family of checkers may serve as a good example of AST-based checkers in the default distribution of CSA.
+
+However, if you try to catch, say, divisions by zero with an AST-based checker, even if it might be easy to find code patterns like ``\lstinline|y = x / 0|'', but it would be much harder to find code like ``\lstinline|z = 0; ...; y = x / z;|''. For such checks, a more powerful approach is necessary.
+
+\subsection{Control flow graph}
+
+Clang \emph{control flow graph}\index[notion]{Control Flow Graph|textbf} (CFG\index[notion]{CFG|see{Control Flow Graph}}) is a representation, using graph notation, of all paths that may seem to be possibly traversed through a program during its execution. CFG is constructed separately for every function body. Each node of the CFG represents a \emph{basic block}\index[notion]{Control Flow Graph!Basic Block|textbf} of statements that do not contain any branch statements, and are therefore executed sequentially. Each basic block ends with a \emph{terminator statement}\index[notion]{Control Flow Graph!Terminator|textbf}, which is a branch statement or a return from the function. Outgoing edges connect the basic block to other blocks that may be reached depending on the run-time value of the terminator branch condition.
+
+\begin{nobr}
+CSA provides an easy way of dumping the control flow graph:
+
+\begin{lstlisting}[style=commandline]
+~ $ @clang -cc1 -analyze -analyzer-checker=debug.ViewCFG test.c@ @@@
+Writing '/tmp/CFG-02fc89.dot'...  done.
+Running 'xdot.py' program... done.@@@
+\end{lstlisting}
+\end{nobr}
+
+Figure \ref{fig:cfg} shows the control flow graph for \lstinline|test.c|, simplified for easier reading.
+
+\begin{figure}[!ht]\center
+\includegraphics[scale=\imgscale]{cfg.pdf}
+\caption{Simplified control flow graph for \lstinline|test.c|.}
+\label{fig:cfg}
+\end{figure}
+
+CFG-based analysis is useful for creating safe checks, for which it is necessary to consider all possible program paths. For example, if you want to ensure that a certain branch condition always evaluates to \lstinline|false|, and thus the code below it is ``dead'', then you'd probably have no choice but to \emph{reach definitions} of all variables referenced inside the condition expression, and CFG would be the right tool for such analysis.
+
+The CFG is constructed relatively easily from the AST. However, CFG-based analysis is often difficult to implement, because CFG does not instantly provide the data flow analysis; additional coding is required to achieve that. Clang framework provides some ready-made CFG-based solutions for checkers ``out of the box'', such as \lstinline|LivenessAnalysis|\index{LivenessAnalysis}.
+
+The \lstinline|deadcode.DeadStores| checker is a good example of a CFG-based checker in the default distribution of CSA.
+
+Sometimes CFG-based analysis is used in combination with path-sensitive analysis, when path-sensitive part of the checker is used to find a potential defect location, and later a CFG-based heuristic is implemented in order to improve true positive rate by inspecting other paths to or from the defect. The official \lstinline|deadcode.UnreachableCode| checker is an example of combining path-sensitive and CFG-based analysis.
+
+However, an attentive reader would instantly find a flaw on Figure \ref{fig:cfg} that makes CFG-based analysis less useful. By simply looking at the CFG, you would not be able to figure out that once \lstinline|true| branch is taken in basic block \lstinline|[B4]|, \lstinline|true| branch is also inevitably taken in basic block \lstinline|[B2]|, and vice versa, because branching conditions before these blocks are related. In fact, depending on the initial value of \lstinline|x|, there are only two ways of reaching the exit block \lstinline|[B0]| from the entry block \lstinline|[B5]|: the program either goes through both \lstinline|[B3]| and \lstinline|[B1]|, as soon as \lstinline|x == 0|, or goes through none of them otherwise. This limitation significantly reduces the efficiency of CFG-based analysis.
+
+\subsection{Exploded graph}\label{subsec:exploded_graph}
+
+CSA \emph{exploded graph}\index[notion]{Exploded Graph|textbf}\index{ExplodedGraph} is the basic data structure of the path-sensitive static analyzer engine. Analyzer core tries to ``interpret'' the program code, and treats different paths through the CFG, even if they pass through same statements or basic blocks, separately, hence the term ``exploded''. Exploded graph consists of all paths through the CFG that were explored by the analyzer engine, and carries information regarding the program state\index[notion]{Exploded Node!Program State}\index{ProgramState} on each path in every statement. Nodes of the graph, referred to as \emph{exploded nodes}\index[notion]{Exploded Node}\index{ExplodedNode}, are pairs composed of the state of the program and the program point\index[notion]{Exploded Node!Program Point}\index{ProgramPoint} currently being analyzed.
+
+\begin{nobr}
+You can display the complete exploded graph for every analysis pass by turning on the special checker called \lstinline|debug.ViewExplodedGraph|:
+
+\begin{lstlisting}[style=commandline]
+~ $ @clang -cc1 -analyze -analyzer-checker=debug.ViewExplodedGraph test.c@ @@@
+Writing '/tmp/ExprEngine-0528e9.dot'...  done. 
+Running 'xdot.py' program... done.@@@
+\end{lstlisting}
+\end{nobr}
+
+Exploded graphs are often very large. Exploded graph of \lstinline|test.c| generated by CSA has over 50 nodes, and is too large to include into this document. Still, figure \ref{fig:expgraph} should give you a rough idea of how it essentially looks. 
+
+\begin{figure}[!ht]\center
+\includegraphics[scale=\imgscale]{expgraph.pdf}
+\caption{Extremely simplified exploded graph for \lstinline|test.c|.}
+\label{fig:expgraph}
+\end{figure}
+
+Let us see how path-sensitive analysis goes on inside \lstinline|test.c|. The analyzer starts with emulating the first operation, namely the comparison operator \lstinline|x == 0|. Because value of \lstinline|x| is unknown at this point of the analysis (and, in fact, will never be known), this value is represented as a \emph{symbol}\index[notion]{Symbolic Value!Symbolic Expression}\index{SymExpr}\index{SymExpr!SymbolRegionValue} \lstinline|reg_$0<x>|. This symbol is to be understood as ``the value stored at the memory region of parameter variable \lstinline|x| at the beginning of the analysis''.
+
+Once the comparison statement is emulated, we reach the terminator of our CFG\index[notion]{Control Flow Graph!Terminator}, namely, the \lstinline|if| statement. Depending on the terminator condition, we jump to another CFG block\index[notion]{Control Flow Graph!Basic Block}, either \lstinline|[B3]| or \lstinline|[B2]|. Because we are unsure what branch we take, we split the exploded graph into the two possible paths. On each path, the new node is created by \emph{assuming} that symbol \lstinline|reg_$0<x>| takes values from a certain \emph{range}\index[notion]{Exploded Node!Program State!Range Constraint|textbf}: on the \lstinline|true| branch, it is assumed\index[notion]{Exploded Node!Program State!Assumption|see{Range Constraint}} to be an integer in range $[0, 0]$ (actually, equal to $0$), and on the \lstinline|false| branch, it is assumed to belong to $[-21417483648, -1]\cup[1, 21417483647]$. The range assumed on the symbols would stay inside all nodes branching off the current node unless the symbol itself is no longer referenced anywhere in the node and gets \emph{garbage-collected}\index[notion]{Garbage Collection}.
+
+On \lstinline|[B3]|, we execute an assignment operator \lstinline|y = 5|. This is instantly represented in the node as a \emph{binding}: the value of variable \lstinline|y| is a \emph{concrete}\index[notion]{Symbolic Value!Concrete Value} (non-symbolic) value 5. Then we jump to \lstinline|[B2]| anyway. However, we are reaching \lstinline|[B2]| in a different state, hence it is represented by a different node in the exploded graph.
+
+Now, upon reaching \lstinline|[B2]|, note how we no longer assume anything or try to guess what branch we take from there. Because range of symbol \lstinline|reg_$0<x>| is still stored inside the node, we already know the truth value of \lstinline|!x|. 
+
+On the \lstinline|true| branch, assignment \lstinline|z = 6| is executed. Note how the binding \lstinline|y = 5| is no longer present in the program state: it was garbage-collected\index[notion]{Garbage Collection} because variable \lstinline|y| is no longer referenced in further code. Finally, all branches reach the end block \lstinline|[B0]|, and the analysis stops.
+
+Information stored in the exploded graph is exhaustive, and contains the best assumptions the analyzer core can make about the program execution. Moreover, unlike AST- and CFG-based analysis, path-sensitive CSA checkers rarely read the exploded graph passively, but instead actively participate in its construction, adding their own nodes, bindings, assumptions, leaving checker-specific marks, and splitting paths in the exploded graph at their own will.
+
+\subsection{Further reading}
+
+Coding AST- or CFG-based checkers is discussed in detail in section \ref{sec:ast_based}. If you are interested in coding path-sensitive checkers, jump directly to chapter \ref{sec:path_sensitive}; however, some knowledge of the Clang AST may still be useful. There is a highly recommended introduction to Clang AST available at the official Clang website\footnote{\url{http://clang.llvm.org/docs/IntroductionToTheClangAST.html}}.
+
+\newpage
+\section{AST-based checkers}\label{sec:ast_based}\index[notion]{Checker!AST-based|textbf}
+
+Many simple checks can be implemented by looking at the syntax tree of the program and catching unwanted code patterns. Checkers that do not make use of the CSA path-sensitive engine are fast and often have good true positive rate, but are capable of catching only a very limited set of defects.
+
+In this section we proceed to discuss two common technologies for creating syntax-only checkers: AST visitors and AST matchers. Usually having a good command of one of these technologies is sufficient, but sometimes you may want to use both matchers and visitors in the same checker.
+
+AST-based checks are not ``the'' strength of the Clang Static Analyzer --- if you are using only AST-based information, then you could have done this check with any other Clang-based tool. In the official Clang Static Analyzer, there are a few AST-based checks, but normally AST-based checks go to the \lstinline|clang-tidy| tool.
+
+On the other hand, it is not uncommon to use AST-based checks from within the path-sensitive engine, so that to have a better idea of the syntax behind the path-sensitive analysis events. So, even though in this section we shall deliberately learn how to write AST-only checks, exactly same techniques may make it into a path-sensitive checker, and it is useful to have a good command of them.
+
+\subsection{Path-insensitive checker callbacks}\index[notion]{Checker!Callback}
+
+Path-sensitive engine of CSA starts working only as soon as at least one checker subscribes to a checker callback that requires path-sensitive analysis to fire. If you are interested only in AST-based checkers, and disable all path-sensitive checkers, the analysis would run significantly faster.
+
+Because AST-based checkers do not participate in construction of the data structures they analyze, only a few AST-only callbacks are defined. The most useful callbacks that do not instantly trigger the path-sensitive engine are \lstinline|check::EndOfTranslationUnit| and \lstinline|check::ASTCodeBody|.
+
+\begin{nobr}
+\subsubsection{check::EndOfTranslationUnit}\index{Checker!check::EndOfTranslationUnit|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkEndOfTranslationUnit(const TranslationUnitDecl *TU,
+                               AnalysisManager &AM, BugReporter &BR) const;
+\end{lstlisting}
+
+In this callback, the complete AST of the program is available for analysis.
+\end{nobr}
+
+The entry point for visiting the AST --- the declaration of the whole translation unit --- is provided as the first argument, \lstinline|TU|. This callback is commonly used when not only executable code, but also declarations needs to be checked.
+
+\begin{nobr}
+\subsubsection{check::ASTCodeBody}\index{Checker!check::ASTCodeBody|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkASTCodeBody(const Decl *D,
+                      AnalysisManager &AM, BugReporter &BR) const;
+\end{lstlisting}
+
+In this callback, a declaration of a function, code body of which the analyzer would normally analyze, would be provided on every call.
+\end{nobr}
+
+The body of the function that needs to be analyzed is available as \lstinline|D->getBody()|. This callback is convenient when only executable code needs to be analyzed.
+
+\begin{nobr}
+\subsubsection{check::ASTDecl<T>}\index{Checker!check::ASTDecl|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkASTDecl(const T *D, AnalysisManager &Mgr, BugReporter &BR) const;
+\end{lstlisting}
+
+
+This callback is called for all AST declarations of type \lstinline|T| (for example, for all variables if \lstinline|T| is \lstinline|VarDecl| or for all class fields if \lstinline|T| is \lstinline|FieldDecl|). This is often a convenient simple alternative for declaration visitors.
+\end{nobr}
+
+\subsection{AST visitors}\index[notion]{Checker!AST-based!AST Visitor|textbf}
+
+The AST visitor mechanism is the most flexible tool for exploring the Clang AST. Clang provides numerous visitors for the AST, with similar syntax. For implementing checkers, two kinds of visitors are mostly useful:
+\begin{itemize}
+ \item[---]\lstinline|ConstStmtVisitor|\index{ConstStmtVisitor|textbf} is widely used for checking code bodies, which is most often exactly what you need,
+ \item[---]\lstinline|ConstDeclVisitor|\index{ConstDeclVisitor|textbf} is sometimes used for checking declarations outside code bodies (such as global variables).
+\end{itemize}
+
+In order to use a visitor, you need to inherit a class from it and implement visitor callbacks for different kinds of AST nodes. Whenever a callback is not implemented for a particular node, a callback for a more generic node would be called anyway: so, for example, a \lstinline|CXXOperatorCallExpr| would be visited in one of the following callbacks:
+\begin{itemize}
+\item[---]\lstinline|VisitCXXOperatorCallExpr(...)|,
+\item[---]\lstinline|VisitCallExpr(...)|,
+\item[---]\lstinline|VisitExpr(...)|,
+\item[---]\lstinline|VisitStmt(...)|,
+\end{itemize}
+whichever turns out to be the first one to be defined.
+
+\subsubsection{Implementing a simple statement visitor}
+
+As an example, let us see if we can rewrite \lstinline|alpha.core.MainCallChecker| described in section \ref{sec:intro} as an AST visitor. This checker would also serve as an example of using the \lstinline|check::ASTCodeBody| callback.
+
+First, let us declare an AST visitor. The visitor stores references to the \lstinline|BugReporter|\index{BugReporter} object in order to throw path-insensitive reports, and also the current \lstinline|AnalysisDeclContext|\index{AnalysisDeclContext}, which is required for producing diagnostic locations for bug reports. The latter also wraps the original function we are analyzing.
+
+\begin{nobr}
+\begin{lstlisting}[style=cplusplus,numbers=none]
+namespace {
+class WalkAST : public ConstStmtVisitor<WalkAST> {
+  BugReporter &BR;
+  AnalysisDeclContext *ADC;
+
+  void VisitChildren(const Stmt *S);
+
+public:
+  WalkAST(BugReporter &Reporter, AnalysisDeclContext *Context)
+      : BR(Reporter), ADC(Context) {}
+  void VisitStmt(const Stmt *S);
+  void VisitCallExpr(const CallExpr *CE);
+};
+}
+\end{lstlisting}\index{ConstStmtVisitor}
+\end{nobr}
+
+The visitor defines two public callbacks: \lstinline|VisitCallExpr(...)| for special handling of function call expressions, and \lstinline|VisitStmt(...)| for visiting all other kinds of statements.
+
+\begin{nobr}
+These callbacks have one thing in common: they need to visit sub-statements whenever they're done visiting their statement. This operation is often separated into a sub-function called \lstinline|VisitChildren(...)|:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void WalkAST::VisitChildren(const Stmt *S) {
+  for (Stmt::const_child_iterator I = S->child_begin(), E = S->child_end();
+       I != E; ++I)
+    if (const Stmt *Child = *I)
+      Visit(Child);
+}
+\end{lstlisting}
+\end{nobr}
+
+\begin{nobr}
+Now, \lstinline|VisitStmt(...)| doesn't really need to do anything else:
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void WalkAST::VisitStmt(const Stmt *S) {
+  VisitChildren(S);
+}
+\end{lstlisting}
+\end{nobr}
+
+\begin{nobr}
+Most of the checker logic is stored in written out in \lstinline|VisitCallExpr(...)|. We obtain the function declaration for the current call expression, take its identifier, and see if this identifier coincides with \lstinline|"main"|. If it does, we throw a path-insensitive (``basic'') report. Note that unlike path-sensitive checkers, syntax-only checkers do not have the convenient \lstinline|CheckerContext| wrapper available, so they need to access the \lstinline|BugReporter| object directly, and also put some effort in obtaining the necessary source locations.
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void WalkAST::VisitCallExpr(const CallExpr *CE) {
+  if (const FunctionDecl *FD = CE->getDirectCallee())
+    if (const IdentifierInfo *II = FD->getIdentifier())
+      if (II->isStr("main")) {
+        SourceRange R = CE->getSourceRange();
+        PathDiagnosticLocation ELoc =
+            PathDiagnosticLocation::createBegin(CE, BR.getSourceManager(), ADC);
+        BR.EmitBasicReport(ADC->getDecl(), "Call to main", "Example checker",
+                           "Call to main", ELoc, R);
+      }
+  VisitChildren(CE);
+}
+\end{lstlisting}\index{BugReporter!EmitBasicReport()}\index{PathDiagnosticLocation}\index{PathDiagnosticLocation!createBegin()}\index{BugReporter!getSourceManager()}\index{SourceManager}\index{AnalysisDeclContext}
+\end{nobr}
+
+\begin{nobr}
+That's it for the implementation of the visitor. Now we simply need to create it and give it some code to visit. Since ``all code'' is a declaration rather than a statement, we subscribe on the \lstinline|check::ASTCodeBody| callback:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+namespace {
+class MainCallCheckerAST : public Checker<check::ASTCodeBody> {
+public:
+  void checkASTCodeBody(const Decl *D, AnalysisManager &AM,
+                        BugReporter &B) const;
+};
+}
+\end{lstlisting}\index{Checker!check::ASTCodeBody}\index{AnalysisManager}\index{BugReporter}\index{AnalysisManager!getAnalysisDeclContext()}\index{AnalysisDeclContext}
+\end{nobr}
+
+\begin{nobr}
+And implement the callback as follows:
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void MainCallCheckerAST::checkASTCodeBody(const Decl *D, AnalysisManager &AM,
+                                          BugReporter &BR) const {
+  WalkAST Walker(BR, AM.getAnalysisDeclContext(D));
+  Walker.Visit(D->getBody());
+}
+\end{lstlisting}
+\end{nobr}
+
+This way the visitor starts from the compound statement that represents the function body, and descends into sub-statements.
+
+\begin{nobr}
+Checker is now ready. However, on the example code from chapter \ref{sec:intro} it is silent --- we're only detecting direct calls now, not calls through function pointers, because only that much is present in the AST. We would warn on a simpler code though:
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void foo() {
+  main(0, 0); // Call to main!
+}
+\end{lstlisting}
+\end{nobr}
+
+
+\begin{nobr}
+\subsubsection{Merging statement and declaration visitors}
+
+Sometimes you'd like to intermix the two visitors together, in order to visit both statements and declarations. In this case, you can inherit your visitor from both visitors:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+class WalkAST : public ConstStmtVisitor<WalkAST>,
+                public ConstDeclVisitor<WalkAST> {
+  /* ... */
+
+public:
+  using ConstStmtVisitor<WalkAST>::Visit;
+  using ConstDeclVisitor<WalkAST>::Visit;
+
+  /* ... */
+};
+\end{lstlisting}\index{ConstStmtVisitor}\index{ConstDeclVisitor}
+\end{nobr}
+
+\subsection{AST matchers}\label{subsec:ast_matchers}\index[notion]{Checker!AST-based!AST Matcher|textbf}
+
+AST matchers are the new API for finding simple code patterns in the Clang AST. They allow writing extremely concise declarative definitions of such patterns --- almost as short as describing them in words in a natural language --- and provide an interface for taking actions on every pattern found. Being preferable for simple code patterns, for their simplicity and code readability, AST matchers are not as omnipotent as AST visitors.
+
+\subsubsection{Implementing a simple AST matcher}
+
+As an example, let us see if we can rewrite \lstinline|alpha.core.MainCallChecker| described in section \ref{sec:intro} with the help of AST matchers.
+
+\begin{nobr}
+Recall that the checker needs to find calls to functions with the name \lstinline|"main"|. Knowing just that, we can instantly write a matcher that finds such calls:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+callExpr(callee(functionDecl(hasName("main")))).bind("call")
+\end{lstlisting}
+\end{nobr}
+
+Which means that complete checker logic now suits into a single line of code! All that remains is to write out the checker bureaucracy and throw the bug report. Note how the \lstinline|bind(...)| matcher command assigns a name to the AST node it is applied to, for future reference.
+
+\begin{nobr}
+The first thing we need to define is the matcher callback. This  callback would fire whenever the matcher finds something. Matcher callbacks need to inherit from \lstinline|MatchFinder::MatchCallback|\index{MatchFinder|textbf}\index{MatchFinder!MatchCallback|textbf} and implement the method called \lstinline|run(...)|:
+\begin{lstlisting}[style=cplusplus,numbers=none]
+namespace {
+class Callback : public MatchFinder::MatchCallback {
+  BugReporter &BR;
+  AnalysisDeclContext *ADC;
+
+public:
+  void run(const MatchFinder::MatchResult &Result);
+  Callback(BugReporter &Reporter, AnalysisDeclContext *Context)
+      : BR(Reporter), ADC(Context) {}
+};
+}
+\end{lstlisting}\index{MatchFinder!MatchResult}
+\end{nobr}
+
+\begin{nobr}
+Ideally, the only thing match callback needs to do is throw the basic bug report. This is the case here. However, sometimes matchers cannot cover the whole checker logic, and it is natural to leave some final checks to the callback.
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void Callback::run(const MatchFinder::MatchResult &Result) {
+  const CallExpr *CE = Result.Nodes.getStmtAs<CallExpr>("call");
+  assert(CE);
+  SourceRange R = CE->getSourceRange();
+  PathDiagnosticLocation ELoc =
+      PathDiagnosticLocation::createBegin(CE, BR.getSourceManager(), ADC);
+  BR.EmitBasicReport(ADC->getDecl(), "Call to main", "Example checker",
+                     "Call to main", ELoc, R);
+}
+\end{lstlisting}
+\index{MatchFinder!MatchResult!Nodes}\index{BugReporter!EmitBasicReport()}\index{PathDiagnosticLocation}\index{PathDiagnosticLocation!createBegin()}\index{BugReporter!getSourceManager()}\index{SourceManager}\index{AnalysisDeclContext}
+\end{nobr}
+
+In the callback, we obtain the call expression by its name, \lstinline|"call"|, defined via \lstinline|bind(...)|. Looking at the matcher, we are sure that such call expression is present, so we can assert that we have successfully obtained the statement by name.
+
+\begin{nobr}
+Now it is time to define the checker. This time, let us try out the whole-translation-unit matching:
+\begin{lstlisting}[style=cplusplus,numbers=none]
+namespace {
+class MainCallCheckerMatchers : public Checker<check::EndOfTranslationUnit> {
+public:
+  void checkEndOfTranslationUnit(const TranslationUnitDecl *TU,
+                                 AnalysisManager &AM, BugReporter &B) const;
+};
+}
+\end{lstlisting}
+\end{nobr}
+
+\begin{nobr}
+Finally, in the checker callback, we need to construct our matcher and use it to find bugs:
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void MainCallCheckerMatchers::checkEndOfTranslationUnit(
+    const TranslationUnitDecl *TU, AnalysisManager &AM, BugReporter &B) const {
+  MatchFinder F;
+  Callback CB(B, AM.getAnalysisDeclContext(TU));
+  F.addMatcher(
+      stmt(hasDescendant(
+          callExpr(callee(functionDecl(hasName("main")))).bind("call"))),
+      &CB);
+  F.matchAST(AM.getASTContext());
+}
+\end{lstlisting}\index{Checker!check::EndOfTranslationUnit}\index{AnalysisManager}\index{BugReporter}\index{AnalysisManager!getASTContext()}\index{ASTContext}
+\end{nobr}
+
+The \lstinline|matchAST(...)|\index{MatchFinder!matchAST()|textbf} method of \lstinline|MatchFinder| lets it match the whole AST of the translation unit. The check\-er is now done. The output is similar to the visitor version of the checker.
+
+The \lstinline|ASTContext|\index{ASTContext|textbf} structure, which we obtained from the \lstinline|AnalysisManager|, contains the whole AST of the program, and also various meta-information regarding the AST, such as implementation-specific traits imposed during compilation.
+
+\begin{nobr}
+\subsubsection{Re-using matchers}
+
+If a certain sub-pattern repeats multiple times in your matcher, you can store and re-use it. In the example below, matcher \lstinline|TypeM| is stored and then re-used twice in two other matchers, which are in turn stored for later use:
+
+\begin{lstlisting}[style=cplusplus]
+TypeMatcher TypeM = templateSpecializationType().bind("type");
+DeclarationMatcher VarDeclM = varDecl(hasType(TypeM)).bind("decl");
+StatementMatcher TempObjM = temporaryObjectExpr(hasType(TypeM)).bind("stmt");
+\end{lstlisting}\index{TypeMatcher}\index{DeclarationMatcher}\index{StatementMatcher}
+\end{nobr}
+
+
+
+\begin{nobr}
+\subsubsection{Defining custom matchers}
+
+Sometimes combining the predefined matchers is not enough to implement the desired check. In this case, it is often convenient to implement a custom AST matcher. Implementing AST matchers is a matter of a few lines of code, and many examples can be found in \lstinline|ASTMatchers.h|. When implementing a custom AST matcher inside the checker, you need to put it into \lstinline|clang::ast_matchers| namespace. The example below defines a custom declaration matcher that matches \lstinline|RecordDecl| nodes that declare unions rather than structures:
+
+\begin{lstlisting}[style=cplusplus]
+namespace clang {
+namespace ast_matchers {
+
+AST_MATCHER(RecordDecl, isUnion) {
+  return Node.isUnion();
+}
+
+} // end namespace clang
+} // end namespace ast_matchers
+\end{lstlisting}\index{AST\_MATCHER()}
+\end{nobr}
+
+\subsubsection{Matching particular statements}
+
+As we mentioned before, the \lstinline|matchAST(...)|\index{MatchFinder!matchAST()} method of \lstinline|MatchFinder| matches the whole AST of the translation unit. Sometimes you want to match only a particular section of the AST. In this case, you can use the \lstinline|match(...)|\index{MatchFinder!match()|textbf} method.
+
+For instance, let us try to implement \lstinline|MainCallChecker| using \lstinline|check::ASTCodeBody|. Then we need to match \lstinline|D->getBody()| with the \lstinline|MatchFinder|.
+
+\begin{nobr}
+However, the semantics of \lstinline|match(...)| is different from semantics of \lstinline|matchAST(...)|: the former tries to match the statement itself, the latter tries to match its sub-statements as well. So we need to modify our matcher to make it look for sub-statements manually:
+
+\begin{lstlisting}[style=cplusplus]
+void MainCallCheckerMatchers::checkASTCodeBody(const Decl *D,
+                                               AnalysisManager &AM,
+                                               BugReporter &BR) const {
+  MatchFinder F;
+  Callback CB(BR, AM.getAnalysisDeclContext(D));
+  F.addMatcher(
+      stmt(hasDescendant(
+          callExpr(callee(functionDecl(hasName("main")))).bind("call"))),
+      &CB);
+  F.matchAST(*(D->getBody()), AM.getASTContext());
+}
+\end{lstlisting}\index{Checker!check::ASTCodeBody}\index{AnalysisManager}\index{BugReporter}\index{AnalysisManager!getASTContext()}\index{ASTContext}
+\end{nobr}
+
+\begin{nobr}
+\subsection{Constant folding}
+
+It is often not obvious from the AST of an expression that this expression actually represents a constant value. This expression may contain casts and references to constant variables, and folding it to the actual value is often non-trivial. There is a ready-made solution in Clang for this problem --- just use the \lstinline|Expr|'s \lstinline|EvaluateAsInt(...)| method:
+\begin{lstlisting}[style=cplusplus,numbers=none]
+const Expr *E = /* some AST expression you are interested in */
+llvm::APSInt Result;
+if (E->EvaluateAsInt(Result, ACtx, Expr::SE_AllowSideEffects)) {
+  /* we managed to obtain the value of the expression */
+  uint64_t IntResult = Result.getLimitedValue();
+  /* ... */
+} else {
+  /* the expression doesn't fold to into a constant value */
+}
+
+\end{lstlisting}
+\end{nobr}
+
+\subsection{Further reading}
+
+A comprehensive AST matcher reference is available on the official Clang website \footnote{\url{http://clang.llvm.org/docs/LibASTMatchersReference.html}}.
+
+While writing AST-based checkers, you would most likely want to consult the official documentation for the various AST nodes:  statement nodes inheriting from \lstinline|Stmt|\footnote{\url{http://clang.llvm.org/doxygen/classclang_1_1Stmt.html}}, declaration nodes inheriting from \lstinline|Decl|\footnote{\url{http://clang.llvm.org/doxygen/classclang_1_1Decl.html}}, and type nodes inheriting from \lstinline|Type|\footnote{\url{http://clang.llvm.org/doxygen/classclang_1_1Type.html}}.
+
+\newpage
+\section{Path-sensitive analysis}\label{sec:path_sensitive}\index[notion]{Checker!Path-sensitive|textbf}
+
+Clang Static Analyzer, by design, implements a static analysis method known as \emph{symbolic execution}\index[notion]{Symbolic Execution}. This method is based on \emph{abstract interpretation}\index[notion]{Abstract Interpretation} of the program, and assumes assigning \emph{symbolic values}\index[notion]{Symbolic Value} to program variables, and splitting all possible states of the program into classes of states leading the program across the same paths.
+
+Classes of such \emph{program states}\index[notion]{Exploded Node!Program State} are often defined by \emph{range constraints}\index[notion]{Exploded Node!Program State!Range Constraint} imposed on symbolic values involved. However, they may also be different in other ways, or even contain checker-specific differences.
+
+The analyzer also implements a memory model that allows remembering concrete and symbolic values of particular \emph{memory regions}\index[notion]{Symbolic Value!Memory Region} and accessing them at any time during analysis.
+
+The path-sensitive engine of CSA supports \emph{interprocedural analysis}\index[notion]{Interprocedural Analysis}. This means that whenever the analyzer encounters a function call, it tries to model the call and descend into sub-function to continue analysis.
+
+\subsection{Obtaining information from the program state}\label{subsec:program_state}
+
+The \lstinline|ProgramState|\index{ProgramState|textbf}\index[notion]{Exploded Node!Program State|textbf} is one of the basic structures in path-sensitive analysis. It holds complete information on a momentary state of the program under analysis. By looking into the program state, you can obtain symbolic values of variables stored in memory regions and expressions defined in the current \emph{location context}\index{LocationContext}.
+
+\lstinline|ProgramState| is \emph{immutable}\index[notion]{Immutability}. Once a \lstinline|ProgramState| object was created, you cannot modify it; you can only create a new \lstinline|ProgramState| object that differs from the original \lstinline|ProgramState| in a certain sense. Also, you never have to access \lstinline|ProgramState| objects directly, or manage their lifetime manually; they are always wrapped into reference-counting smart pointers called \lstinline|ProgramStateRef|\index{ProgramStateRef|textbf}.
+
+\begin{nobr}
+In most path-sensitive checker callbacks, you have a \lstinline|CheckerContext|\index{CheckerContext} object available. One thing it carries is the current program state, which you can easily obtain, for example:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkEndFunction(CheckerContext &C) const {
+  ProgramStateRef State = C.getState();
+  /* ... */
+}
+\end{lstlisting}\index{CheckerContext!getState()|textbf}\index{Checker!check::EndFunction}
+\end{nobr}
+
+Program state consists of the following traits of the program:
+
+\begin{itemize}
+\item[---]``Environment''\index[notion]{Exploded Node!Program State!Environment|textbf}: symbolic values of active expressions;
+\item[---]``Region Store''\index[notion]{Exploded Node!Program State!Region Store}: symbolic values of memory regions;
+\item[---]``Range Constraints''\index[notion]{Exploded Node!Program State!Range Constraint}: ranges that symbolic values may take;
+\item[---]``Taint''\index[notion]{Exploded Node!Program State!Taint}: a registry of symbolic values obtained from insecure sources;
+\item[---]``Generic Data Map''\index[notion]{Exploded Node!Program State!Generic Data Map}: checker-specific information.
+\end{itemize}
+
+\begin{nobr}
+\subsubsection{Obtaining values of expressions}
+
+The analyzer remembers symbolic values for all expressions it currently needs. Whenever an expression leaves the current context, it is garbage-collected\index[notion]{Garbage Collection} and no longer available. The mapping from expressions to their symbolic values is called the \emph{environment}. You can always obtain the value of an expression if it is available in the environment:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+const Expr *E = /* some AST expression you are interested in */;
+const LocationContext *LC = C.getLocationContext();
+SVal Val = State->getSVal(E, LC);
+\end{lstlisting}\index{SVal}\index{LocationContext}\index{CheckerContext!getLocationContext()}\index{ProgramState!getSVal()|textbf}
+\end{nobr}
+
+If expression \lstinline|E| is available in the environment, \lstinline|Val| would be its symbolic value. If \lstinline|E| is not in the current environment, an \lstinline|UnknownVal| would be returned. The environment would not try to compute the value for any AST expression; it would only return the value if it is already there. A few things you can surely find in the environment include values of sub-expressions before analyzing the whole expression, and also the value of any expression right after it was analyzed, which is enough for most practical purposes.
+
+\begin{nobr}
+\subsubsection{A brief introduction to memory regions}
+
+Memory regions\index[notion]{Symbolic Value!Memory Region}\index{MemRegion} are symbolic l-values. They may appear during analysis by obtaining symbolic values of pointers:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+const Expr *E = /* an pointer expression */;
+const MemRegion *Reg = State->getSVal(E, LC).getAsRegion();
+\end{lstlisting}\index{MemRegion}\index{ProgramState!getSVal()}\index{SVal!getAsRegion()}
+\end{nobr}
+
+\begin{nobr}
+Memory regions can also be obtained directly with declarations of variables:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+const VarDecl *D = /* a declaration of a variable */;
+const MemRegion *Reg = State->getLValue(D, LC).getAsRegion();
+\end{lstlisting}\index{MemRegion}\index{ProgramState!getSVal()}\index{SVal!getAsRegion()}
+\end{nobr}
+
+In both cases, \lstinline|getAsRegion()| would return a null pointer if the value obtained does not represent any memory region.
+
+Memory regions can contain symbolic values inside them; obtaining such values may be though of as dereferencing memory regions as pointers. The mechanism for dereferencing memory regions is called the \emph{region store}\index[notion]{Exploded Node!Program State!Region Store}. Each \lstinline|ProgramState| contains an instance of the store, which carries known bindings of symbolic values to memory regions.
+
+\begin{nobr}
+Obtaining the region binding from the program state is as simple as:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+SVal Val = State->getSVal(Reg);
+\end{lstlisting}\index{ProgramState!getSVal()}
+\end{nobr}
+
+Unlike the environment, the region store tries to produce a sensible binding even if there is no direct binding already available in the current store. In such cases, it would construct and return a symbol representing the unknown value of the region. This means that you can always rely on \lstinline|getSVal(const MemRegion *)| to produce a sensible symbolic value.
+
+\subsubsection{Iterating over region store bindings}\label{subsubsec:bindings_handler}\index[notion]{Exploded Node!Program State!Region Store}
+
+The most common operation you usually use the region store for is obtaining bindings for particular memory regions. However, sometimes you may want to list (or, generally speaking, iterate over) all explicit bindings in the store. In the \lstinline|StoreManager|\index{StoreManager|textbf} class, which maintains ownership of the region store instances, there is a mechanism for iterating over bindings in a particular program state, known as the \lstinline|BindingsHandler|\index{StoreManager!BindingsHandler|textbf}.
+
+\begin{nobr}
+In order to use \lstinline|BindingsHandler|, you need to inherit from it:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+class Callback : public StoreManager::BindingsHandler {
+public:
+  bool HandleBinding(StoreManager &SM, Store St,
+                     const MemRegion *Region, SVal Val) {
+    /* ... */
+  }
+};
+\end{lstlisting}\index{Store}
+\end{nobr}
+
+\begin{nobr}
+The callback should return \lstinline|false| whenever it needs to stop iterating. Once the callback is defined, you can start iterating:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+Callback CB;
+StoreManager &SM = C.getStoreManager();
+SM.iterBindings(State->getStore(), CB);
+\end{lstlisting}\index{CheckerContext!getStoreManager()}\index{ProgramState!getStore()}\index{StoreManager!iterBindings()|textbf}
+\end{nobr}
+
+
+\begin{nobr}
+\subsubsection{Assumptions on symbolic values}\label{subsubsec:assumptions}
+
+With a program state, you can take any symbolic value and assume a boolean condition on it: whether this value would represent a boolean \lstinline|true| or a boolean \lstinline|false|. In order to test an assumption, the value needs to be either defined or unknown; undefined values cannot be tested. Once you are sure that the value is not undefined, you can use the \lstinline|assume(...)|\index{ProgramState!assume()} method of the program state:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+SVal Val = /* a certain symbolic value */;
+Optional<DefinedOrUnknownSVal> DVal = Val.getAs<DefinedOrUnknownSVal>();
+if (!DVal)
+  return;
+if (State->assume(*DVal, true)) {
+  /* things to do if Val can possibly be true */
+}
+if (State->assume(*DVal, false)) {
+  /* things to do if Val can possibly be false */
+}
+\end{lstlisting}\index{SVal!DefinedOrUnknownSVal}\index{SVal!getAs<>()}
+\end{nobr}
+
+Note that both statements can actually fire, if the value is not known to be certainly true or certainly false.
+
+\begin{nobr}
+\subsubsection{Operations on symbolic values}
+
+Suppose you have symbolic values \lstinline|A| and \lstinline|B|, and you want to assume that \lstinline|A| is greater than \lstinline|B|. In order to do that, you need to represent ``\lstinline|A > B|'' as a new symbolic value \lstinline|C| (of boolean type). You can create new symbolic values with a special class called \lstinline|SValBuilder|\index{SValBuilder}:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+SVal A = /* a certain symbolic value */;
+SVal B = /* the other symbolic value */;
+ASTContext &ACtx = C.getASTContext();
+SValBuilder &SVB = C.getSValBuilder();
+SVal C = SVB.evalBinOp(State, BO_GT, A, B, ACtx.BoolTy);
+\end{lstlisting}\index{SValBuilder!evalBinOp()}\index{CheckerContext!getSValBuilder()}\index{ASTContext}
+\end{nobr}
+
+\subsubsection{Using the taint analysis}\label{subsubsec:taint_1}\index[notion]{Exploded Node!Program State!Taint|textbf}
+
+A symbolic value is said to be \emph{tainted} if it is known to have been obtained from an untrusted source, such as by reading standard input or file descriptor, or from environment variables. Taint analysis is an efficient method for finding security defects, such as SQL injections, based on detecting usage of tainted values in sensitive function calls.
+
+\begin{nobr}
+You can always find out if a certain symbolic value is tainted in a certain program state:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+ProgramStateRef State = C.getState();
+SVal Val = /* a certain symbolic value */;
+if (State->isTainted(Val)) {
+  /* ... */
+}
+\end{lstlisting}\index{ProgramState!isTainted()|textbf}\index{CheckerContext!getState()}
+\end{nobr}
+
+Most of the taint information originates from default built-in CSA checkers, most notably from the checker called \lstinline|alpha.security.taint.TaintPropagation|. On defining your own sources of taint for your check\-er and otherwise expanding taint analysis, see \ref{subsubsec:taint_2}.
+
+\subsection{Mutating and splitting the program state}\label{subsec:program_state_2}
+
+Path-sensitive checkers\index[notion]{Checker!Path-sensitive} not only observe the symbolic execution\index[notion]{Symbolic Execution} of the program by the analyzer core, but also actively participate in modeling the program behavior. A checker may add its own traits to the program state, modify region store bindings or range constraints, or split the state, implying that a certain operation may have multiple distinct results that would eventually make the program take different execution paths.
+
+Note that splitting program states should be done with care. Each program state split effectively doubles the amount of work the analyzer needs to perform for the rest of the current \lstinline|ExplodedGraph|\index[notion]{Exploded Graph} sub-tree. A~large enough amount of splits can quickly degrade the analysis speed.
+
+\subsubsection{Adding transitions to the exploded graph}
+
+As explained in subsection \ref{subsec:exploded_graph}, the path-sensitive analyzer engine represents the flow of the analysis in the form of a graph, called the \emph{exploded graph}\index[notion]{Exploded Graph} of the analysis. Nodes of this graph, known as the \emph{exploded nodes}\index[notion]{Exploded Node}, are defined as ordered pairs that consist of a program point (a single element of the CFG\index[notion]{Control Flow Graph} is represented with one program point, or more than one if technically necessary), and a program state. Each statement of the program brings us from one existing node to another newly created node, or probably into multiple other nodes, if there are multiple things that may happen in this statement.
+
+In fact, the exploded graph is not necessarily a tree; it may contain cycles, whenever the program reaches the same program point with the same program state; in this case the analysis of the branch effectively stops, most likely indicating an infinite loop (or, more likely, a bug in one of the checkers).
+
+You cannot modify existing nodes, program points, or program states; they are \emph{immutable}\index[notion]{Immutability}. What you can do, however, is produce a new program state or a new auxiliary program point (or both), and make use of the \lstinline|CheckerContext|\index{CheckerContext} object to \emph{add a transition} to this new state or new point.
+
+\begin{nobr}
+Code that changes a single aspect of a program state usually looks as:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+ProgramStateRef State = C.getState();
+State = modifyState(State); // do stuff
+C.addTransition(State);
+\end{lstlisting}\index{CheckerContext!addTransition()|textbf}
+\end{nobr}
+
+\begin{nobr}
+If you want to add parallel transitions to multiple alternative nodes, you would probably do something like:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+ProgramStateRef State = C.getState();
+ProgramStateRef State1 = modifyState1(State); // do stuff
+ProgramStateRef State2 = modifyState2(State); // do other stuff
+C.addTransition(State1);
+C.addTransition(State2);
+\end{lstlisting}
+\end{nobr}
+
+Sometimes you want to make a single sequence of transitions, rather than multiple parallel independent branches. In this case, you can use the overridden method that accepts a predecessor node:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+ProgramStateRef State = C.getState();
+State = modifyState1(State); // do stuff
+ExplodedNode *N = C.addTransition(State);
+State = modifyState2(State, N); // do other stuff
+C.addTransition(State2, N);
+\end{lstlisting}
+
+Transitions added in these three code snippets are visualized as the respective graphs on figure~\ref{fig:addtrans}.
+
+\begin{figure}[!ht]\center
+\includegraphics[scale=\imgscale]{addtrans.pdf}
+\caption{Adding transitions to the exploded graph.}
+\label{fig:addtrans}
+\end{figure}
+
+Now let us discuss different mechanisms of mutating the program state available for use in the checkers.
+
+\subsubsection{Splitting the state on range constraint assumptions}\index[notion]{Exploded Node!Program State!Range Constraint}
+
+The \lstinline|assume(...)|\index{ProgramState!assume()|textbf} method of \lstinline|ProgramState| discussed in \ref{subsubsec:assumptions} operates by returning a new program state with the assumption imposed, or a null \lstinline|ProgramStateRef|\index{ProgramStateRef} if the assumption cannot be satisfied (because it contradicts other assumptions already imposed). Thus, what you can do is not only cast it to bool to see if the assumption can be satisfied, but also transition to the newly created state.
+
+\begin{nobr}
+For example, if your checker needs to inform the analyzer that a certain function cannot return~$0$, you can assume its symbolic return value to be non-zero, and add a transition to the assumed state on post-call of this function:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+SVal Val = Call.getReturnValue();
+Optional<DefinedOrUnknownSVal> DVal = Val.getAs<DefinedOrUnknownSVal();
+if (!DVal)
+  return;
+ProgramStateRef State = C.getState();
+State = State->assume(*DVal, true);
+C.addTransition(State);
+\end{lstlisting}\index{CallEvent!getReturnValue()}\index{SVal!DefinedOrUnknownSVal}\index{SVal!getAs<>()}\index{CheckerContext!getState()}\index{ProgramState!assume()}\index{CheckerContext!addTransition()}
+\end{nobr}
+
+After such transition, the analyzer would know that this value is non-zero on the whole remaining execution path.
+
+Sometimes you may want to add parallel transitions to both \lstinline|true| and \lstinline|false| branches. What is it good for? In fact. the whole idea of symbolic execution\index[notion]{Symbolic Execution} is about splitting states. This way you do the same thing that an analyzer does on encountering an \lstinline|if| statement: instead of considering a single branch on which nothing is known about the symbol, you consider two branches, on each of which something is known. It means that if a checker, in order to report its defect, needs to know exactly that, say, the value is zero, the checker would be able to find such defect on one of the branches. Without a state split, such checker would stay silent, being unable to find a program path on which the defect is certain to exist.
+
+\begin{nobr}
+\subsubsection{Creating region store bindings}\index[notion]{Exploded Node!Program State!Region Store|textbf}
+
+Sometimes you may want to modify the program state by binding\index[notion]{Exploded Node!Program State!Binding|see{Region Store}} a symbolic value to a location. A typical use case would be to manually emulate a function call that the analyzer is unable to model; for example, source code of a certain function is not available, but you can still put your understanding of its specification into the checker and try to emulate its behavior. And then, if you know that the function would write a certain symbolic value into a certain location, you can tell the checker to model it:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+ProgramStateRef State = C.getState();
+SVal Loc = /* Obtain a location */;
+SVal Val = /* Obtain a value */;
+State = State->bindLoc(Loc, Val);
+C.addTransition(State);
+\end{lstlisting}
+\end{nobr}
+
+\subsubsection{Expanding the taint analysis}\label{subsubsec:taint_2}\index[notion]{Exploded Node!Program State!Taint}
+
+In order to make taint analysis efficient, the analyzer needs to know which events \emph{produce} tainted values, and how taint \emph{propagates} through different events to other symbolic values. Both of these tasks can be extended with the help of checkers.
+
+In order to add sources of taint, subscribe to any checker callback suitable for catching the desired event, and use the \lstinline|addTaint(...)|\index{ProgramState!addTaint()|textbf} method of the \lstinline|ProgramState|. This method has three overrides, that allow adding taint to different kind of symbolic values.
+
+\begin{nobr}
+Adding taint on expressions in the current environment:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+LocationContext *LC = C.getLocationContext();
+ProgramStateRef State = C.getState();
+const Expr *E = /* Obtain an expression value of which is untrusted */;
+ProgramStateRef NewState = State->addTaint(E, LC);
+if (NewState != State) // avoid loops in the exploded graph
+  C.addTransition(NewState);
+\end{lstlisting}\index{CheckerContext!addTransition()}\index{CheckerContext!getState()}
+\end{nobr}
+
+\begin{nobr}
+Tainting a numeric value:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+ProgramStateRef State = C.getState();
+SVal V = /* Obtain a numeric symbol from an untrusted source */;
+if (SymbolRef Sym = V.getAsSymbol()) {
+  ProgramStateRef NewState = State->addTaint(Sym);
+  if (NewState != State)
+    C.addTransition(NewState);
+}
+\end{lstlisting}
+\end{nobr}
+
+\begin{nobr}
+Adding taint to a pointer to an untrusted data:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+ProgramStateRef State = C.getState();
+SVal V = /* Obtain a symbolic location from an untrusted source */;
+ProgramStateRef NewState = State->addTaint(V.getAsRegion());
+if (NewState != State)
+  C.addTransition(NewState);
+\end{lstlisting}
+\end{nobr}
+
+Note that you cannot mark concrete values as tainted. For example, a symbolic value that represents 32-bit signed integer ``$0$'', cannot be marked as tainted; in fact, the analyzer doesn't even discriminate between different instances of ``$0$''.
+
+By default, the if a certain symbolic value is marked as tainted, then results of arithmetic operations over it are also marked as tainted. If a region is tainted, then all values derived from it are also tainted; however, if an unrelated value is written into a tainted region, such value is of course no longer considered to be tainted. Also, a region of an element of an array with a tainted symbolic element index is automatically tainted.
+
+However, more complex things may happen to the tainted values. For example, it may be passed into a function that returns another symbolic value, and probably the function cannot be modeled by the analyzer core. In such cases, you need to implement taint propagation: catch the event through which you want the taint to propagate, see if the relevant value is tainted, and then add the taint to the values you want the taint to propagate to.
+
+As mentioned in \ref{subsubsec:taint_1}, most common sources of taint and propagation methods are already defined in the \lstinline|alpha.security.taint.TaintPropagation| checker, which also contains many examples of working with taint. It is natural, however, for your checker to add your own domain-specific taint sources and propagation methods.
+
+See subsection \ref{subsec:taint_3} for which exactly kinds of symbolic values can carry taint, and why.
+
+\subsubsection{Using program state traits}\label{subsubsec:gdm}
+
+Checkers are allowed to add their own custom traits\index[notion]{Exploded Node!Program State!Trait|see{Generic Data Map}} to the program state. These traits are stored in a special structure inside the program state, known as the \emph{generic data map}\index[notion]{Exploded Node!Program State!Generic Data Map|textbf} (GDM\index[notion]{Exploded Node!Program State!GDM|see{Generic Data Map}}).
+
+One of the primary use cases for custom program traits is detecting errors that are defined as \emph{sequences of events} rather than one-time events. One of the very obvious examples of such errors is ``double-free'' kind of errors, which arises when object is destroyed twice, but every single destruction of an object is not yet an defect. In order to create a checker that handles such cases, the common practice is to create a map from symbolic identifiers of objects to their state as seen by the checker (unknown, live, deleted), and store such map within the GDM. Then, the check that would ultimately report the error would be defined as ``an object is being destroyed in a program state in which it is marked as deleted''.
+
+A typical mistake made by inexperienced authors of CSA checkers is to store such map as a field inside the checker class. This is the very reason why all checker callbacks are \lstinline|const|-qualified functions: there are very few cases when you need to store anything in the checker state, most of the time \emph{checkers are stateless}. Along the analysis, it is natural for the engine to jump from one branch to another. However, for example, if an object is marked as deleted on one of the program execution branches, it doesn't mean it is deleted on other branches. Which means that member variables of the checker, which are the same for all branches, are not the suitable place for storing information related to the program state; only the program state itself is.
+
+Like the program state itself, GDM is immutable\index[notion]{Immutability}. Which is why, in order to store different data structures inside the GDM, you need to use LLVM immutable containers: \lstinline|llvm::ImmutableList|, \lstinline|llvm::ImmutableSet|, \lstinline|llvm::ImmutableMap|, otherwise performance would suffer significantly, as the program state is copied many times during the analysis.
+
+In order to inject a new trait into the program state, you need to use one of the four predefined macros in the global scope of your checker code (not inside the namespace, and not in a place accessible from multiple Clang translation units).
+
+\begin{nobr}
+\begin{lstlisting}[style=cplusplus,numbers=none]
+REGISTER_TRAIT_WITH_PROGRAMSTATE(TraitName, Type)
+\end{lstlisting}\index{REGISTER\_TRAIT\_WITH\_PROGRAMSTATE|textbf}
+
+Makes the program state carry a trait of type \lstinline|Type|. You can access the trait and obtain its value in the current state by calling \lstinline|State->get<TraitName>()|\index{ProgramState!get<>()|textbf}, or obtain a new state with a modified trait value by calling \lstinline|State->set<TraitName>(NewValue)|\index{ProgramState!set<>()|textbf}. Also, \lstinline|TraitNameTy| is now a synonym for \lstinline|Type|.
+\end{nobr}
+
+\begin{nobr}
+\begin{lstlisting}[style=cplusplus,numbers=none]
+REGISTER_LIST_WITH_PROGRAMSTATE(ListName, ElementType)
+\end{lstlisting}\index{REGISTER\_LIST\_WITH\_PROGRAMSTATE|textbf}
+
+Makes the program state carry a trait of type \lstinline|ListNameTy|, which is an LLVM immutable list of elements of type \lstinline|ElementType|. Apart from working with the whole list via \lstinline|get<>()| and \lstinline|set<>()|, you can also easily append items by calling \lstinline|State->add<ListName>(NewItem)|\index{ProgramState!add<>()|textbf}, or scan the list for items by calling the \lstinline|State->contains<ListName>(Item)|\index{ProgramState!contains<>()|textbf} method template.
+\end{nobr}
+
+\begin{nobr}
+\begin{lstlisting}[style=cplusplus,numbers=none]
+REGISTER_SET_WITH_PROGRAMSTATE(SetName, ElementType)
+\end{lstlisting}\index{REGISTER\_SET\_WITH\_PROGRAMSTATE|textbf}
+
+Makes the program state carry a trait of type \lstinline|SetNameTy|, which is an LLVM immutable set of elements of type \lstinline|ElementType|. The set trait supports \lstinline|add<>()| and \lstinline|contains<>()| similarly to the list trait, and you can also remove items from the set (which is too heavy of an operation for an immutable list) and obtain a new program state with these items removed from the set by calling \lstinline|State->remove<SetName>(Element)|\index{ProgramState!remove<>()|textbf}.
+\end{nobr}
+
+\begin{nobr}
+\begin{lstlisting}[style=cplusplus,numbers=none]
+REGISTER_MAP_WITH_PROGRAMSTATE(MapName, KeyType, ValueType)
+\end{lstlisting}\index{REGISTER\_MAP\_WITH\_PROGRAMSTATE|textbf}
+
+Makes the program state carry a trait of type \lstinline|MapNameTy|, which is an LLVM immutable map from objects of type \lstinline|KeyType| to objects of type \lstinline|ValueType|. This trait supports \lstinline|remove<>()| by key, it doesn't support \lstinline|add<>()|, and also \lstinline|set<>()| and \lstinline|get<>()| are conveniently overridden: the \lstinline|State->get<MapName>(Key)| method looks-up the value for the key \lstinline|Key|, and you can also call the \lstinline|State->set<MapName>(Key, Value)| method to obtain a new program state with value for \lstinline|Key| set to \lstinline|Value|.
+\end{nobr}
+
+If any of the \lstinline|Type|, \lstinline|ElementType|, \lstinline|KeyType|, \lstinline|ValueType| in these macros is not an integral type, eg. \lstinline|int| or \lstinline|bool|, or a pointer type, then there are certain compile-time requirements imposed on these types, necessary for them to qualify as elements of an immutable container. Most importantly, they need to provide a \lstinline|Profile(...)| method, which allows to use them as LLVM folding-set nodes.
+
+\begin{nobr}
+For example, you cannot easily put an \lstinline|std::string|, or even an \lstinline|llvm::StringRef|, into an immutable container. You can make a simple wrapper though:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+class StringWrapper {
+  const std::string Str;
+
+public:
+  StringWrapper(const std::string &S) : Str(S) {}
+  const std::string &get() const { return Str; }
+  void Profile(llvm::FoldingSetNodeID &ID) const {
+    ID.AddString(Str);
+  }
+  bool operator==(const StringWrapper &RHS) const { return Str == RHS.Str; }
+  bool operator<(const StringWrapper &RHS) const { return Str < RHS.Str; }
+};
+\end{lstlisting}
+\end{nobr}
+
+\begin{nobr}
+Usage example:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+REGISTER_SET_WITH_PROGRAMSTATE(MyStringSet, StringWrapper)
+
+void MyChecker::checkPreCall(const CallEvent &Call, CheckerContext &C) {
+  ProgramStateRef State = C.getState();
+  if (const IdentifierInfo *II = Call.getCalleeIdentifier()) {
+    std::string Str = II->getName();
+    State = State->add<MyStringSet>(StringWrapper(Str));
+    C.addTransition(State);
+  }
+  if (State->contains<MyStringSet>(StringWrapper("main"))) {
+    /* ... */
+  }
+}
+\end{lstlisting}\index{CallEvent!getCalleeIdentifier()}\index{ProgramState!add<>()}\index{ProgramState!contains<>()}\index{REGISTER\_SET\_WITH\_PROGRAMSTATE}
+\end{nobr}
+
+\begin{nobr}
+Note that \lstinline|SVal| object provides its own \lstinline|Profile(...)| method. If you need to store a complex structure, you can implement the \lstinline|Profile(...)| method by profiling all its fields:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void MyStructure::Profile(llvm::FoldingSetNodeID &ID) const {
+  ID.AddPointer(Sym);
+  Val.Profile(ID);
+}
+\end{lstlisting}
+\end{nobr}
+
+\subsection{Path-sensitive checker callbacks}\label{subsec:path_sensitive_callbacks}\index[notion]{Checker!Callback}
+
+Path-sensitive checkers continuously interact with the analyzer core through numerous checker callbacks. Different callbacks fire on different events that happen during analysis.
+
+\begin{nobr}
+\subsubsection{check::PreStmt<T>}\index{Checker!check::PreStmt|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkPreStmt(const T *S, CheckerContext &C) const;
+\end{lstlisting}
+
+A callback template defined for any AST statement class~\lstinline|T|, that fires every time the analyzer engine \emph{is about to} analyze a statement of class \lstinline|T|. In this callback, you can obtain values of sub-statements of the statement~\lstinline|T| from the environment\index[notion]{Exploded Node!Program State!Environment}.
+\end{nobr}
+
+This callback does not get called on control flow statements (CFG terminators\index[notion]{Control Flow Graph!Terminator}) like \lstinline|if|. In order to check such statements, subscribe to \lstinline|check::BranchCondition|.
+
+\begin{nobr}
+A typical usage example for this callback can be found in the \lstinline|core.DivideZero| checker from the default distribution of CSA:
+
+\begin{lstlisting}[style=cplusplus]
+void DivZeroChecker::checkPreStmt(const BinaryOperator *B,
+                                  CheckerContext &C) const {
+  BinaryOperator::Opcode Op = B->getOpcode();
+  /* ... */
+  SVal Denom = C.getState()->getSVal(B->getRHS(), C.getLocationContext());
+  /* ... */
+}
+\end{lstlisting}\index{ProgramState!getSVal()}\index{CheckerContext!getLocationContext()}
+\end{nobr}
+
+This checker uses class \lstinline|BinaryOperator| as template parameter \lstinline|T|, effectively subscribing on receiving the callback just before every binary operator the analyzer models. Then on line 3 it observes the binary operator's AST to understand the which operation is being modeled, for it is only interested in divisions. Later, on line 5, it obtains the symbolic value for the denominator from the environment.
+
+\begin{nobr}
+\subsubsection{check::PostStmt<T>}\index{Checker!check::PostStmt|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkPostStmt(const T *S, CheckerContext &C) const;
+\end{lstlisting}
+
+This callback template is similar to \lstinline|check::PreStmt<T>|, and the only difference is that it fires \emph{after} the statement has been modeled. If \lstinline|S| is an expression, this callback allows to obtain the symbolic value of \lstinline|S| itself; however, values of sub-expressions might have been already removed from the environment\index[notion]{Exploded Node!Program State!Environment}.
+\end{nobr}
+
+A good example of \lstinline|check::PostStmt<T>| usage is available in the \lstinline|unix.Malloc| checker from the default distribution of CSA, which finds memory issues such as leaks or double-free crashes. This checker subscribes on \lstinline|check::PostStmt<CXXNewExpr>| in order to track symbolic values of pointers allocated with every execution of operator \lstinline|new| or \lstinline|new[]|.
+
+\begin{nobr}
+\subsubsection{check::PreCall}\index{Checker!check::PreCall|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkPreCall(const CallEvent &Call, CheckerContext &C) const;
+\end{lstlisting}
+
+This handy callback is simply a more convenient version of \lstinline|check::PreStmt<CallExpr>|. It fires at exact same moment, before the call is executed, regardless of whether it would be handled with the interprocedural analysis engine or not\index[notion]{Interprocedural Analysis}. The difference is that in \lstinline|check::PreCall| you possess the \lstinline|CallEvent|\index{CallEvent|textbf} structure from which you can easily obtain symbolic values of the callee, all arguments, and the C++ implicit \lstinline|this| argument.
+\end{nobr}
+
+In this callback, it is common to try to figure out what function is being called. The easiest way to understand that is to obtain the name of the callee identifier and compare it with the given string. However, string comparison is a heavy operation; it is much faster to store the identifier for the function we want, and then compare identifier pointers.
+
+We have already seen \lstinline|check::PreCall| used in \lstinline|alpha.core.MainCallChecker|. You can also find a usage example for \lstinline|check::PreCall| in \lstinline|alpha.unix.SimpleStreamChecker| from the default distribution of CSA.
+
+\begin{nobr}
+First, let us see how it obtains identifier pointers for faster function lookup:
+
+\begin{lstlisting}[style=cplusplus]
+void SimpleStreamChecker::initIdentifierInfo(ASTContext &ACtx) const {
+  if (IIfclose)
+    return;
+  IIfclose = &ACtx.Idents.get("fclose");
+}
+\end{lstlisting}\index{CheckerContext!getASTContext()}\index{ASTContext}
+\end{nobr}
+
+The \lstinline|ASTContext.Idents|\index{ASTContext!Idents} member variable is the identifier table of the translation unit. You can consult it to find identifiers by string names, store them, and then use for faster lookup.
+
+\begin{nobr}
+The implementation of the callback uses \lstinline|CallEvent| to quickly check if the function being called is the function we are looking for. Then it obtains symbolic value for the argument and makes checks over it:
+
+\begin{lstlisting}[style=cplusplus]
+void SimpleStreamChecker::checkPreCall(const CallEvent &Call,
+                                       CheckerContext &C) const {
+  initIdentifierInfo(C.getASTContext()); 
+  if (!Call.isGlobalCFunction())
+    return;
+  if (Call.getCalleeIdentifier() != IIfclose)
+    return;
+  if (Call.getNumArgs() != 1)
+    return;
+  SymbolRef FileDesc = Call.getArgSVal(0).getAsSymbol();
+  /* ... */
+}
+\end{lstlisting}\index{CallEvent!isGlobalCFunction()}\index{CallEvent!getCalleeIdentifier()}\index{CallEvent!getNumArgs()}\index{CallEvent!getArgSVal()}\index{SVal!getAsSymbol()}
+\end{nobr}
+
+\begin{nobr}
+\subsubsection{check::PostCall}\index{Checker!check::PostCall|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkPreCall(const CallEvent &Call, CheckerContext &C) const;
+\end{lstlisting}
+
+Similarly to \lstinline|check::PreCall|, this is a shortcut callback for \lstinline|check::PostStmt<CallExpr>|, in which the \lstinline|CallEvent|\index{CallEvent} structure is available. It fires right after any function call. You can obtain the return value of the call, which is already computed by now, as \lstinline|Call.getReturnValue()|\index{CallEvent!getReturnValue()}.
+\end{nobr}
+
+Usage tricks for this callback are quite similar to \lstinline|check::PreCall|, and these callbacks are often used in pairs. For example, \lstinline|alpha.unix.SimpleStreamChecker| uses \lstinline|check::PreCall| for handing \lstinline|fclose()| calls (where it needs to access the argument) and \lstinline|check::PostCall| for \lstinline|fopen()| (where it needs to access the return value). Similarly, the \lstinline|unix.Malloc| checker uses \lstinline|check::PreCall| to track \lstinline|free()| after catching \lstinline|malloc()| in the \lstinline|check::PostCall| callback.
+
+\begin{nobr}
+\subsubsection{check::Location}\index{Checker!check::Location|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkLocation(SVal L, bool IsLoad, const Stmt* S, CheckerContext &C) const;
+\end{lstlisting}
+
+This callback fires every time the program under analysis addresses a certain memory location, either for reading a value from it, or for writing a value into it. Symbolic value \lstinline|L| would be the l-value (most likely a memory region) being checked, and the \lstinline|IsLoad| flag is set whenever the access to \lstinline|L| is read-only. Value \lstinline|L| is described with statement \lstinline|S|; if you want to obtain the statement of the access, you'd need to look at its parent statement, probably by using the \lstinline|ParentMap|\index{ParentMap}. Also, \lstinline|CheckerContext| is available with its usual functions.
+\end{nobr}
+
+Use this callback whenever you're interested in validating the location rather than the value, that is, whenever accessing the location is ``the'' event you're interested in. A good usage example is given in the official \lstinline|core.NullDereference| checker, which subscribes to \lstinline|check::Location| in order to detect undefined or null-pointer location values.
+
+\begin{nobr}
+\begin{lstlisting}[style=cplusplus]
+void DereferenceChecker::checkLocation(SVal L, bool IsLoad, const Stmt* S,
+                                       CheckerContext &C) const {
+  // Check for dereference of an undefined value.
+  if (L.isUndef()) {
+    if (ExplodedNode *N = C.generateSink()) {
+      /* ... */
+    }
+    return;
+  }
+  DefinedOrUnknownSVal Location = L.castAs<DefinedOrUnknownSVal>();
+  // Check for null dereferences.
+  if (!Location.getAs<Loc>())
+    return;
+  ProgramStateRef State = C.getState();
+  ProgramStateRef NotNullState, NullState;
+  llvm::tie(NotNullState, NullState) = State->assume(Location);
+  if (NullState) {
+    if (!NotNullState) {
+      /* ... */
+    }
+    /* ... */
+  }
+  /* ... */
+}
+\end{lstlisting}\index{SVal!isUndef()}\index{CheckerContext!generateSink()}\index{SVal!castAs<>()}\index{SVal!getAs<>()}\index{SVal!DefinedOrUnknownSVal}\index{ProgramState!assume()}
+\end{nobr}
+
+In the code above, the checker implements a variety of tests in order to explore the nature of the location value and produce different kinds of warnings. You may see how it first detects undefined location values (catches \lstinline|UndefinedVal|\index{SVal!UndefinedVal}), then tries to assume the location to be null or non-null in the current program state and make decisions based on that. The checker also \emph{splits the program state} in order to discriminate between null and non-null locations if both variants are possible.
+
+\begin{nobr}
+\subsubsection{check::Bind}\index{Checker!check::Bind|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkBind(SVal L, SVal V, const Stmt *S, CheckerContext &C) const;
+\end{lstlisting}
+
+This callback is somewhat similar to \lstinline|check::Location|. It is called whenever a value is bound to a location, and both the location and the value are available as symbolic values \lstinline|L| and \lstinline|V| respectively. Unlike \lstinline|check::Location|, \lstinline|check::Bind| does not get called on loads from locations; it only gets called on writes, when a \emph{region binding}\index[notion]{Exploded Node!Program State!Region Store} appears due to a write operation by the program.
+\end{nobr}
+
+For a substantive example of \lstinline|check::Bind|, you can see the \lstinline|alpha.core.BoolAssignment| checker, which checks for assigning values other than $0$ or $1$ to bool-type variables.
+
+\begin{nobr}
+\begin{lstlisting}[style=cplusplus]
+void BoolAssignmentChecker::checkBind(SVal L, SVal V, const Stmt *S,
+                                      CheckerContext &C) const {
+  // We are only interested in stores into Booleans.
+  const TypedValueRegion *TR =
+    dyn_cast_or_null<TypedValueRegion>(L.getAsRegion());
+  if (!TR)
+    return;
+  QualType valTy = TR->getValueType();
+  if (!isBooleanType(valTy))
+    return;
+  Optional<DefinedSVal> DV = V.getAs<DefinedSVal>();
+  if (!DV)
+    return;
+  ProgramStateRef State = C.getState();
+  SValBuilder &SVB = C.getSValBuilder();
+  DefinedSVal ZeroVal = SVB.makeIntVal(0, valTy);
+  SVal GreaterThanOrEqualToZeroVal =
+    SVB.evalBinOp(State, BO_GE, *DV, ZeroVal, SVB.getConditionType());
+  /* ... */
+  DefinedSVal OneVal = SVB.makeIntVal(1, valTy);
+  SVal LessThanEqToOneVal =
+    SVB.evalBinOp(State, BO_LE, *DV, OneVal, SVB.getConditionType());
+  /* ... */
+}
+\end{lstlisting}\index{MemRegion!TypedValueRegion}\index{MemRegion!TypedValueRegion!getValueType()}\index{SVal!getAsRegion()}\index{CheckerContext!getSValBuilder()}\index{SValBuilder}\index{SValBuilder!evalBinOp()}\index{SValBuilder!makeIntVal()}\index{SVal!getAs<>()}\index{SVal!DefinedSVal}
+\end{nobr}
+
+This checker first inspects the location in order to see if this location is of boolean type. Not every memory region has a type; for example, any void pointer points to a certain memory region, but the analyzer cannot afford making assumptions about the type of values stored in such region. Region that contains values of an explicitly known type is a sub-class of \lstinline|MemRegion| known as \lstinline|TypedValueRegion|. The checker aborts unless the region pointed to by \lstinline|L| certainly has a boolean type. For detailed discussion of various memory region kinds, see subsection \ref{subsec:MemRegion}.
+
+Then the checker proceeds to figure out if value \lstinline|V| is equal to $0$ or $1$. For that, it creates symbolic comparison values using \lstinline|SValBuilder|, assumes them to be true or false, and makes decisions based on these assumptions.
+
+\begin{nobr}
+\subsubsection{check::EndAnalysis}\index{Checker!check::EndAnalysis|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkEndAnalysis(ExplodedGraph &G, BugReporter &BR, ExprEngine &Eng) const;
+\end{lstlisting}
+
+This callback fires once whenever the path-sensitive analyzer finishes analyzing a certain function code body.
+\end{nobr}
+
+The analysis is reset (and \lstinline|check::EndAnalysis| callback is called) whenever a function body is fully analyzed. Thus, this callback may be called more than once during analysis of a single translation unit (or, equivalently, more than once during \lstinline|Checker| object lifetime, or, equivalently, more than once during \lstinline|clang| run).
+
+This callback fires only once per function code body, rather than once for every branch of the function. This is why \lstinline|CheckerContext|\index{CheckerContext} is not available in this callback, and you cannot obtain the current \lstinline|ProgramState|\index{ProgramState}. Instead, you have the whole \lstinline|ExplodedGraph|\index{ExplodedGraph} available. You also have access to the \lstinline|BugReporter|\index{BugReporter} for throwing bug reports, and to the \lstinline|ExprEngine|\index{ExprEngine} object, which is the unique instance of the analyzer engine.
+
+\begin{nobr}
+\lstinline|check::EndAnalysis| is useful whenever you want to gather statistics across the whole analysis run. One of the extreme examples of using \lstinline|check::EndAnalysis| is the \lstinline|deadcode.UnreachableCode| checker:
+
+\begin{lstlisting}[style=cplusplus]
+void UnreachableCodeChecker::checkEndAnalysis(ExplodedGraph &G,
+                                              BugReporter &BR,
+                                              ExprEngine &Eng) const {
+  /* ... */
+  if (Eng.hasWorkRemaining())
+    return;
+  /* ... */
+  for (ExplodedGraph::node_iterator I = G.nodes_begin(), E = G.nodes_end();
+       I != E; ++I) {
+    /* ... */
+  }
+  /* ... */
+}
+\end{lstlisting}
+\end{nobr}
+
+This path-sensitive checker finds dead code by understanding which paths were executed during symbolic execution\index[notion]{Symbolic Execution} of the function by the engine.
+
+Sometimes the function would be dropped as too complicated; in this case, \lstinline|hasWorkRemaining()|\index{ExprEngine!hasWorkRemaining()} would return \lstinline|true|, and the checker would avoid jumping to conclusions. Then the checker proceeds by iterating through the \lstinline|ExplodedGraph| in order to find which CFG\index[notion]{Control Flow Graph!Basic Block} blocks were reached.
+
+\begin{nobr}
+\subsubsection{check::EndFunction}\index{Checker!check::EndFunction|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkEndFunction(CheckerContext &Ctx) const;
+\end{lstlisting}
+
+This callback fires every time the analyzer leaves the function body. Unlike \lstinline|check::EndAnalysis|, it fires for every possible return from the function, for every branch of the program execution. Also, when interprocedural analysis\index[notion]{Interprocedural Analysis} is enabled, this callback fires not only when the analysis ends, but also when an analysis of an inlined function call ends. 
+\end{nobr}
+
+\begin{nobr}
+Consider an example:
+
+\begin{lstlisting}[style=cplusplus]
+void bar(int a, int b, int c) {
+  if (b) {}
+  foo(a);
+  if (c) {}
+}
+
+void foo(int a) {
+  if (a) {}
+}
+\end{lstlisting}
+\end{nobr}
+
+In this code, \lstinline|check::EndFunction| fires twice when analyzing \lstinline|foo()| in top frame, four times when analyzing \lstinline|foo()| as called from \lstinline|bar()|, and eight times when analyzing \lstinline|bar()|, 14 times total. On the contrary, \lstinline|check::EndAnalysis| would be called once for \lstinline|foo()| and once for \lstinline|bar()|; it would not be called for the pass through \lstinline|foo()| from inside \lstinline|bar()|.
+
+You often want to subscribe \lstinline|check::EndFunction| when you want to find out what remains at the function context at the end of the analysis. One of the examples in the default Clang distribution is the official \lstinline|core.StackAddressEscape| checker. This checker iterates through all region store bindings\index[notion]{Exploded Node!Program State!Region Store} in order to find pointers to local variables stored in global variables by the end of the function.
+
+\begin{nobr}
+\begin{lstlisting}[style=cplusplus]
+void StackAddrEscapeChecker::checkEndFunction(CheckerContext &C) const {
+  class CallBack : public StoreManager::BindingsHandler {
+  private:
+    CheckerContext &C;
+    const StackFrameContext *CurSFC;
+  public:
+    SmallVector<std::pair<const MemRegion*, const MemRegion*>, 10> V;
+    CallBack(CheckerContext &CC) :
+      C(CC),
+      CurSFC(CC.getLocationContext()->getCurrentStackFrame())
+    {}
+    bool HandleBinding(StoreManager &SMgr, Store Store,
+                       const MemRegion *Region, SVal Val) {
+      if (!isa<GlobalsSpaceRegion>(Region->getMemorySpace()))
+        return true;
+      const MemRegion *VR = Val.getAsRegion();
+      if (!VR)
+        return true;
+      /* ... */
+      if (const StackSpaceRegion *SSR = 
+          dyn_cast<StackSpaceRegion>(VR->getMemorySpace())) {
+        if (SSR->getStackFrame() == CurSFC)
+          V.push_back(std::make_pair(Region, VR));
+      }
+      return true;
+    }
+  };
+  ProgramStateRef State = C.getState();
+  CallBack CB(C);
+  C.getStoreManager().iterBindings(State->getStore(), CB);
+  /* ... */
+}
+\end{lstlisting}\index{StoreManager}\index{StoreManager!BindingsHandler}\index{StoreManager!iterBindings()}\index{CheckerContext!getStoreManager()}\index{Store}\index{MemRegion}\index{MemRegion!getMemorySpace()}\index{MemRegion!GlobalsSpaceRegion}\index{MemRegion!StackSpaceRegion}\index{SVal!getAsRegion()}\index{CheckerContext!getLocationContext()}\index{LocationContext!getCurrentStackFrame()}\index{MemRegion!StackSpaceRegion!getStackFrame()}
+\end{nobr}
+
+Note the usage of the \lstinline|StackFrameContext|\index{LocationContext!StackFrameContext} structure. By comparing the current stack frame with the stack frame of the stack region, the checker understands whether the stack memory region belongs to the same or to a different stack frame. You almost always need to realize the current  \lstinline|StackFrameContext| when using the \lstinline|check::EndFunction| callback.
+
+\begin{nobr}
+\subsubsection{check::BranchCondition}\index{Checker!check::BranchCondition|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkBranchCondition(const Stmt *S, CheckerContext &C) const;
+\end{lstlisting}
+
+This callback gets called on every control flow branching that occurs during the analysis of the program. Unlike the \lstinline|check::PreStmt| and \lstinline|check::PostStmt| callbacks, which fire for every statement in every CFG basic block\index[notion]{Control Flow Graph!Basic Block}, \lstinline|check::BranchCondition| fires for every CFG terminator\index[notion]{Control Flow Graph!Terminator} instead. Such terminators may include \lstinline|if| statements, conditional loops, or even short circuits in logical operations \lstinline$||$ and \lstinline|&&|.
+\end{nobr}
+
+You want to subscribe to this callback whenever you want to figure out what the program uses to make control flow decisions. For example, you may investigate the origin of the symbolic value of the condition, which is available in the environment\index[notion]{Exploded Node!Program State!Environment}.
+
+\begin{nobr}
+The official \lstinline|core.uninitialized.Branch| checker relies on this callback to find branch conditions that depend on an undefined value:
+
+\begin{lstlisting}[style=cplusplus]
+void UndefBranchChecker::checkBranchCondition(const Stmt *S,
+                                              CheckerContext &C) const {
+  SVal Val = C.getState()->getSVal(S, C.getLocationContext());
+  if (Val.isUndef()) {
+    /* ... */
+  }
+  /* ... */
+}
+\end{lstlisting}\index{ProgramState!getSVal()}\index{CheckerContext!getLocationContext()}\index{SVal!isUndef()}
+\end{nobr}
+
+\begin{nobr}
+\subsubsection{check::LiveSymbols}\index{Checker!check::LiveSymbols|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkLiveSymbols(ProgramStateRef State, SymbolReaper &SR) const;
+\end{lstlisting}
+
+This callback allows the checker to manually manage garbage collection\index[notion]{Garbage Collection} of range constraints for symbolic expressions. The \lstinline|SymbolReaper|\index{SymbolReaper|textbf} object is responsible for garbage collection of symbols; you also have access to the current program state in this callback.
+\end{nobr}
+
+Most of the time, unless you really know what you are doing, this callback is only useful for \emph{metadata symbols}. \lstinline|SymbolMetadata|\index{SymExpr!SymbolMetadata} is a special kind of symbolic expression that is created and managed by the checker itself, and this callback is necessary for managing the lifetime of such symbol.
+
+\begin{nobr}
+For example, the \lstinline|alpha.unix.cstring.OutOfBounds| checker relies on this callback in order to mark metadata symbols that represent string length as live:
+
+\begin{lstlisting}[style=cplusplus]
+void CStringChecker::checkLiveSymbols(ProgramStateRef State,
+                                      SymbolReaper &SR) const {
+  CStringLengthTy Entries = State->get<CStringLength>();
+  for (CStringLengthTy::iterator I = Entries.begin(), E = Entries.end();
+       I != E; ++I) {
+    SVal Len = I.getData();
+    for (SymExpr::symbol_iterator SI = Len.symbol_begin(),
+                                  SE = Len.symbol_end(); SI != SE; ++SI)
+      SR.markInUse(*SI);
+  }
+}
+\end{lstlisting}\index{ProgramState!get<>()}\index{SymbolReaper!markInUse()}\index{SVal!symbol\_begin()}\index{SVal!symbol\_end()}
+\end{nobr}
+
+A symbol that represents string length is live whenever the string is the same: even though the memory region that holds the string is the same, changing the value at the null terminator character to a non-null character (or inserting a null character before it) would change the length of a C-style string, and the symbol that represents the old length is no longer necessary and can be released for garbage-collection.
+
+It doesn't mean that the symbol would be instantly deleted; for instance, it would not be deleted as long as it still is stored in another variable in the region store\index[notion]{Exploded Node!Program State!Region Store}, even if released by the checker.
+
+Metadata symbols would be discussed in detail in \ref{subsubsec:metadata}.
+
+\begin{nobr}
+\subsubsection{check::DeadSymbols}\index{Checker!check::DeadSymbols|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void checkDeadSymbols(SymbolReaper &SymReaper, CheckerContext &C) const;
+\end{lstlisting}
+
+This callback gets called when the symbol is garbage-collected\index[notion]{Garbage Collection}, and \lstinline|check::LiveSymbols| didn't prevent that.
+\end{nobr}
+
+On this callback, your checker is notified that this symbol would not be encountered again during further analysis, and you can stop tracking it in your checker-specific data structures. Most likely this assumes removing the symbol information from the GDM of the program state.
+
+This also means that the value represented by the symbol is no longer stored anywhere in the program under analysis; this value is lost forever. For example, if this symbol is a memory address allocated but not freed during analysis, then death of such symbol is a \emph{memory leak}: there's no way for the program to free it once the symbol dies.
+
+\begin{nobr}
+Consider \lstinline|alpha.unix.SimpleStreamChecker|. It uses \lstinline|check::DeadSymbols| to both clean up its GDM and find file descriptor leaks:
+
+\begin{lstlisting}[style=cplusplus]
+void SimpleStreamChecker::checkDeadSymbols(SymbolReaper &SymReaper,
+                                           CheckerContext &C) const {
+  ProgramStateRef State = C.getState();
+  SymbolVector LeakedStreams;
+  StreamMapTy TrackedStreams = State->get<StreamMap>();
+  for (StreamMapTy::iterator I = TrackedStreams.begin(),
+                             E = TrackedStreams.end(); I != E; ++I) {
+    SymbolRef Sym = I->first;
+    bool IsSymDead = SymReaper.isDead(Sym);
+    if (isLeaked(Sym, I->second, IsSymDead, State))
+      LeakedStreams.push_back(Sym);
+    if (IsSymDead)
+      State = State->remove<StreamMap>(Sym);
+  }
+  ExplodedNode *N = C.addTransition(State);
+  reportLeaks(LeakedStreams, C, N);
+}
+\end{lstlisting}\index{SymbolReaper!isDead()}\index{ProgramState!get<>()}\index{ProgramState!remove<>()}\index{CheckerContext!addTransition()}
+\end{nobr}
+
+\begin{nobr}
+\subsubsection{check::RegionChanges}\index{Checker!check::RegionChanges|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+bool wantsRegionChangeUpdate(ProgramStateRef State) const;
+\end{lstlisting}
+\begin{lstlisting}[style=cplusplus,numbers=none]
+ProgramStateRef checkRegionChanges(ProgramStateRef State,
+                                   const InvalidatedSymbols *Invalidated,
+                                   ArrayRef<const MemRegion *> ExplicitRegions,
+                                   ArrayRef<const MemRegion *> Regions,
+                                   const CallEvent *Call) const;
+\end{lstlisting}
+
+This pair of callbacks allows the checker to monitor all changes in the region store. Unlike \lstinline|check::Bind| and \lstinline|check::Location|, this callback also gets called on invalidation\index[notion]{Invalidation}, providing the relevant information, such as the optional call event.
+\end{nobr}
+
+\begin{figure}[!ht]\center
+\begin{tabular}{|r|l|c|c|c|}
+\hline
+&\textbf{Event}&\lstinline|check::Location|&\lstinline|check::Bind|&\lstinline|check::RegionChanges|\\
+\hline
+1&Load from a variable&\checkmark&&\\
+\hline
+2&Assignment operators&\checkmark&\checkmark&\checkmark\\
+\hline
+3&Initializations&&\checkmark&\checkmark\\
+\hline
+4&Temporary value creation&&&\checkmark\\
+\hline
+5&Default bindings&&&\checkmark\\
+\hline
+6&Garbage collection of bindings&&&\checkmark\\
+\hline
+7&Invalidation&&&\checkmark\\
+\hline
+\end{tabular}
+\caption{Comparison of the three region store-related callbacks.}
+\label{fig:bind_callbacks}
+\end{figure}\index[notion]{Garbage Collection}\index[notion]{Invalidation}\index[notion]{Exploded Node!Program State!Region Store}\index{Checker!check::Location}\index{Checker!check::Bind}
+
+As shown on figure \ref{fig:bind_callbacks}, \lstinline|check::RegionChanges| gets called much more often than \lstinline|check::Location| or \lstinline|check::Bind|, ensuring exhaustive monitoring of all changes in the store. This callback is also expensive to call, because complete lists of changed symbols and regions are presented. This is why there is an auxiliary callback \lstinline|wantsRegionChangeUpdate()| that should be defined in order to optimize out the work necessary for calling \lstinline|checkRegionChanges()| when such work is not necessary.
+
+\begin{nobr}
+For example, in the official \lstinline|alpha.unix.cstring.OutOfBounds| checker, \lstinline|wantsRegionChangeUpdate()| returns \lstinline|true| whenever the checker is tracking length of at least one C string:
+
+\begin{lstlisting}[style=cplusplus]
+REGISTER_MAP_WITH_PROGRAMSTATE(CStringLength, const MemRegion *, SVal)
+/* ... */
+bool CStringChecker::wantsRegionChangeUpdate(ProgramStateRef State) const {
+  CStringLengthTy Entries = State->get<CStringLength>();
+  return !Entries.isEmpty();
+}
+\end{lstlisting}\index{ProgramState!get<>()}
+\end{nobr}
+
+The checker then proceeds with iterating over the \lstinline|Regions| array in order to remove entries for string length for the changed regions and its sub-regions and super-regions.
+
+\begin{nobr}
+\begin{lstlisting}[style=cplusplus]
+ProgramStateRef
+CStringChecker::checkRegionChanges(ProgramStateRef State,
+                                   const InvalidatedSymbols *Invalidated,
+                                   ArrayRef<const MemRegion *> ExplicitRegions,
+                                   ArrayRef<const MemRegion *> Regions,
+                                   const CallEvent *Call) const {
+  llvm::SmallPtrSet<const MemRegion *, 8> InvalidatedRegions;
+  llvm::SmallPtrSet<const MemRegion *, 32> SuperRegions;
+  for (ArrayRef<const MemRegion *>::iterator
+       I = Regions.begin(), E = Regions.end(); I != E; ++I) {
+    const MemRegion *MR = *I;
+    InvalidatedRegions.insert(MR);
+    SuperRegions.insert(MR);
+    while (const SubRegion *SR = dyn_cast<SubRegion>(MR)) {
+      MR = SR->getSuperRegion();
+      SuperRegions.insert(MR);
+    }
+  }
+  CStringLengthTy::Factory &F = State->get_context<CStringLength>();
+  for (CStringLengthTy::iterator I = Entries.begin(),
+       E = Entries.end(); I != E; ++I) {
+    const MemRegion *MR = I.getKey();
+    if (SuperRegions.count(MR)) {
+      Entries = F.remove(Entries, MR);
+      continue;
+    }
+    const MemRegion *Super = MR;
+    while (const SubRegion *SR = dyn_cast<SubRegion>(Super)) {
+      Super = SR->getSuperRegion();
+      if (InvalidatedRegions.count(Super)) {
+        Entries = F.remove(Entries, MR);
+        break;
+      }
+    }
+  }
+  return State->set<CStringLength>(Entries);
+}
+\end{lstlisting}
+\end{nobr}\index{ProgramState!get<>()}\index{ProgramState!set<>()}
+
+For better performance, super-regions of invalidated regions are stored in an \lstinline|llvm::SmallPtrSet|, which is of course problematic with sub-regions. Also note how the checker avoids creating multiple intermediate program states for each region removal, working on the immutable map directly.
+
+
+\begin{nobr}
+\subsubsection{check::PointerEscape}\index{Checker!check::PointerEscape|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+ProgramStateRef checkPointerEscape(ProgramStateRef State,
+                                   const InvalidatedSymbols &Escaped,
+                                   const CallEvent *Call,
+                                   PointerEscapeKind Kind) const;
+\end{lstlisting}
+
+Whenever a pointer value is assigned to a global variable, or passed into a function that the analyzer cannot model, the pointer is said to ``escape''. Such pointer cannot be reliably tracked any longer. When a pointer escapes, \lstinline|check::PointerEscape| is called in order to notify the checkers for escape of pointers they were interested in.
+\end{nobr}
+
+If the pointer escape occurs during invalidation\index[notion]{Invalidation}, information on the call event is provided.
+
+Similarly to how \lstinline|check::DeadSymbols|\index{Checker!check::DeadSymbols} can be used for detecting resource leaks, \lstinline|check::PointerEscape| can be used for eliminating false positives in such checks: an escaped pointer could have been freed without us knowing, or value beyond it may have been changed.
+
+In \lstinline|alpha.unix.SimpleStreamChecker|, this callback is used for finding escaped file descriptors:
+
+\begin{lstlisting}[style=cplusplus]
+ProgramStateRef
+SimpleStreamChecker::checkPointerEscape(ProgramStateRef State,
+                                        const InvalidatedSymbols &Escaped,
+                                        const CallEvent *Call,
+                                        PointerEscapeKind Kind) const {
+  if (Kind == PSK_DirectEscapeOnCall && guaranteedNotToCloseFile(*Call)) {
+    return State;
+  }
+  for (InvalidatedSymbols::const_iterator I = Escaped.begin(),
+                                          E = Escaped.end();
+                                          I != E; ++I) {
+    SymbolRef Sym = *I;
+    State = State->remove<StreamMap>(Sym);
+  }
+  return State;
+}
+\end{lstlisting}\index{ProgramState!remove<>()}
+
+On line 6, a custom check is performed to avoid considering escapes on certain expected kinds of invalidation events --- in order to heuristically determine if the function is of interest.
+
+
+\begin{nobr}
+\subsubsection{eval::Assume}\index{Checker!eval::Assume|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+ProgramStateRef evalAssume(ProgramStateRef State, SVal Cond,
+                           bool Assumption) const;
+\end{lstlisting}
+
+This callback fires every time a new range constraint\index[notion]{Exploded Node!Program State!Range Constraint} appears in the program state. With this callback, checkers can be notified on new constraints imposed over symbols they store internally, or let them help the analyzer with ``evaluating'' the assumption, together with the constraint manager, modifying the program state. However, before using this callback, see if \lstinline|check::BranchCondition|\index{Checker!check::BranchCondition} may be enough for your purposes.
+\end{nobr}
+
+\begin{nobr}
+For example, the \lstinline|unix.Malloc| uses this callback to find if any of the symbols pointing to allocated memory were constrained to a null-pointer value. As soon as the symbol disintegrates into a concrete value, it is pointless to track such symbol any longer:
+
+\begin{lstlisting}[style=cplusplus]
+ProgramStateRef MallocChecker::evalAssume(ProgramStateRef State, SVal Cond,
+                                          bool Assumption) const {
+  RegionStateTy RS = State->get<RegionState>();
+  for (RegionStateTy::iterator I = RS.begin(), E = RS.end(); I != E; ++I) {
+    ConstraintManager &CMgr = State->getConstraintManager();
+    ConditionTruthVal AllocFailed = CMgr.isNull(State, I.getKey());
+    if (AllocFailed.isConstrainedTrue())
+      State = State->remove<RegionState>(I.getKey());
+  }
+  /* ... */
+  return State;
+}
+\end{lstlisting}\index{ConstraintManager}\index{ProgramState!get<>()}\index{ProgramState!getConstraintManager()}\index{ConstraintManager!isNull()}\index{ProgramState!remove<>()}
+\end{nobr}
+
+\begin{nobr}
+\subsubsection{eval::Call}\index{Checker!eval::Call|textbf}
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+bool evalCall(const CallExpr *CE, CheckerContext &C) const;
+\end{lstlisting}
+
+This checker callback allows the checkers to model a function call, overriding the usual interprocedural analysis\index[notion]{Interprocedural Analysis} mechanism. It may be useful for modeling domain-specific library functions, when the source code of the function is not available for analysis.
+\end{nobr}
+
+The callback should return \lstinline|true| if the checker has successfully modeled the function call, and \lstinline|false| if the checker would better rely on the analyzer core or on other checkers to evaluate this call.
+
+Usage of this callback is \emph{discouraged} because \emph{only one checker may evaluate any call event}; if two or more checkers, probably developed by different people, accidentally evaluate the same function, behavior of the analyzer is undefined. So, if possible, \lstinline|check::PreCall|\index{Checker!check::PreCall} and \lstinline|check::PostCall|\index{Checker!check::PostCall} should be considered, and most of the time they are flexible enough to model effects of the call on the program state.
+
+\begin{nobr}
+The official \lstinline|core.builtin.BuiltinFunctions| checker uses this callback in order to emulate behavior of certain compiler built-in functions:
+
+\begin{lstlisting}[style=cplusplus]
+bool BuiltinFunctionChecker::evalCall(const CallExpr *CE,
+                                      CheckerContext &C) const {
+  const FunctionDecl *FD = C.getCalleeDecl(CE);
+  if (!FD)
+    return false;
+  ProgramStateRef State = C.getState();
+  const LocationContext *LCtx = C.getLocationContext();
+  switch (FD->getBuiltinID()) {
+  /* ... */
+  case Builtin::BI__builtin_addressof: {
+    assert (CE->arg_begin() != CE->arg_end());
+    SVal X = State->getSVal(*(CE->arg_begin()), LCtx);
+    C.addTransition(State->BindExpr(CE, LCtx, X));
+    return true;
+  }
+  /* ... */
+  }
+  /* ... */
+}
+\end{lstlisting}\index{CheckerContext!getCalleeDecl()}\index{CheckerContext!getLocationContext()}\index{ProgramState!getSVal()}\index{CheckerContext!addTransition()}
+\end{nobr}
+
+\subsection{Implementing bug reporter visitors}\label{subsec:bug_visitors}
+
+Usually \lstinline|BugReporter|\index{BugReporter} does a fairly good job at explaining how exactly was the path-sensitive bug discovered, displaying all events along the symbolic execution path to the user. Sometimes, however, you may want it to mark and display additional events. For instance, when reporting a double-free bug, you may want to let the user know when the first free occurred. In this case, you need to implement a bug reporter visitor, which would walk through the bug report path, as a list of \lstinline|ExplodedNode|'s\index[notion]{Exploded Node}\index{ExplodedNode}, from start to end, and inject path diagnostic pieces along the way.
+
+\begin{nobr}
+The syntax for bug reporter visitors is as follows:
+\begin{lstlisting}[style=cplusplus]
+class MyVisitor : public BugReporterVisitorImpl<MyVisitor> {
+  void Profile(llvm::FoldingSetNodeID &ID) const {
+    /* ... */
+  }
+  PathDiagnosticPiece *VisitNode(const ExplodedNode *N,
+                                 const ExplodedNode *PrevN,
+                                 BugReporterContext &BRC,
+                                 BugReport &BR) {
+    /* ... */
+    if (const Stmt *S = /* Obtain a statement for diagnostic */) {
+      PathDiagnosticLocation Pos(S, BRC.getSourceManager(),
+                                 N->getLocationContext());
+      return new PathDiagnosticEventPiece(Pos, "Message");
+    }
+    return NULL;
+  }
+};
+\end{lstlisting}\index{BugReporterVisitor|textbf}\index{BugReporterVisitor!VisitNode()|textbf}\index{BugReporterContext}\index{ExplodedNode}\index{BugReport}\index{PathDiagnosticLocation}\index{PathDiagnosticEventPiece}
+\end{nobr}
+
+You need to implement the \lstinline|Profile(...)| method because bug visitors would be stored in an LLVM folding set of path diagnostic callbacks.
+
+Then you need to implement \lstinline|VisitNode(...)|. It should identify the node of interest, construct a path diagnostic for it and return it, or return a null pointer if the node should be skipped.
+
+\begin{nobr}
+It is not uncommon to identify nodes by statements in their program points\index[notion]{Exploded Node!Program Point}. In this case, the static helper method \lstinline|getStmt(...)|\index{PathDiagnosticLocation!getStmt()} of \lstinline{PathDiagnosticLocation} class should be useful:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+const Stmt *S = PathDiagnosticLocation::getStmt(N);
+\end{lstlisting}
+\end{nobr}
+
+Note, however, that there are most likely multiple nodes corresponding to the same statement.
+
+\subsection{Understanding interprocedural analysis}\label{subsec:ipa}\index[notion]{Interprocedural Analysis|textbf}\index[notion]{IPA|see{Interprocedural Analysis}}
+
+The way CSA models function calls is fairly straightforward and transparent for most checkers. The analyzer normally handles function calls by \emph{inlining} the callee code body, proceeding with execution of the callee code right after its arguments were evaluated, and until a return occurs, then finally binding the return value, if any, to the call expression in the environment\index[notion]{Exploded Node!Program State!Environment} and continue analysis of the caller.
+
+If the source code of the function body is not available for the analyzer, it tries to evaluate the function \emph{conservatively}. As little as possible is assumed about the function during conservative evaluation, and an \emph{invalidation} of known information usually occurs.
+
+Additionally, CSA checkers may override the evaluation procedure for certain functions, by subscribing on the \lstinline|eval::Call|\index{Checker!eval::Call} callback.
+
+In order to implement certain checks, you may need to understand certain peculiarities of both the inlining procedure and the conservative evaluation procedure.
+
+\subsubsection{Conservative evaluation and invalidation}
+
+When both inlining and checker-side evaluation of the call fails, the analyzer falls back to conservative evaluation. Such evaluation is relatively simple, as nothing really gets evaluated. Instead, the analyzer needs to drop all information that was formerly known and might have become invalid. The process of erasing such information is called \emph{invalidation}\index[notion]{Invalidation}.
+
+Invalidation is mostly handled by the region store. The function may write unknown values to all locations available to it, such as global variables or regions that were passed into it as arguments. New, unconstrained symbolic expressions of type \lstinline|SymbolConjured| (this type of symbols is discussed in detail in \ref{subsubsec:SymbolConjured}) are created in order to represent these values, and bound to the invalidated regions in the region store.
+
+\begin{nobr}
+There are two checker callbacks that let you catch invalidation events in your checker and take action:
+\begin{itemize}
+\item[---]\lstinline|check::PointerEscape|\index{Checker!check::PointerEscape} lets you handle an event of a pointer symbol being passed into a conservatively evaluated function.
+\item[---]\lstinline|check::RegionChanges|\index{Checker!check::RegionChanges} lets you observe the complete consequences of invalidation, including a list of invalidated regions.
+\end{itemize}
+\end{nobr}
+
+\subsubsection{Inlining and stack frames}
+
+Inlining function calls is a heavy operation for the analyzer. Every function call needs to be modeled again and again in every new context, and the context-specific exploded graph (which may have different values for variables of the context, and lack branches unreachable in the context) of the callee becomes a sub-graph of the exploded graph of the current analysis.
+
+There are multiple preconditions required for inlining to happen, including:
+\begin{itemize}
+\item[---]Source code of the callee function body needs to be available;
+\item[---]No checker should evaluate the function call via \lstinline|eval::Call|\index{Checker!eval::Call};
+\item[---]If the analysis of the callee reaches maximum exploded node\index[notion]{Exploded Node} limit, the callee would never be inlined, but evaluated conservatively instead;
+\item[---]Even though recursion is supported, only a limited number of nested recursive calls would be executed.
+\end{itemize}
+
+Whenever an analyzer inlines a function and descends into it, a new \lstinline|StackFrameContext|\index{LocationContext!StackFrameContext|textbf} is created. This structure is a kind of \lstinline|LocationContext|\index{LocationContext} that describes the location of descending into a function during interprocedural analysis. You can obtain the current stack frame via the \lstinline|getStackFrame()|\index{CheckerContext!getStackFrame()|textbf} method of the \lstinline|CheckerContext|. Very often all you need to know is that if we are inside an inlined function or in top frame; in this case, a convenient \lstinline|inTopFrame()|\index{CheckerContext!inTopFrame()|textbf} method of the \lstinline|CheckerContext| can be used.
+
+One of the common cases when you need to work with stack frames is the \lstinline|check::EndFunction|\index{Checker!check::EndFunction} checker callback. This callback fires on every return from the function, however you need to see if it is the end of the analysis or merely a pop from a stack frame.
+
+Sometimes, you may want to rely on symbolic value hierarchy (see section \ref{sec:svals}) in your checker logic. Then, you would know that the symbolic value that represents a function argument value would be a symbol of type \lstinline|SymbolRegionValue|\index{SymExpr!SymbolRegionValue} for a region of type \lstinline|VarRegion|\index{MemRegion!VarRegion} for a decl of type \lstinline|ParmVarDecl|. However, for inlined calls, this is no longer true; for instance, the argument may be an arbitrary \lstinline|SVal|, whichever was passed to the function in the current caller context. So if you rely on such checks, you would most likely need to code additional checks to understand the status of IPA in the current event.
+
+\subsection{Further reading}
+
+The method of symbolic execution was first defined in 1976 in an academic article by James C. King\footnote{James C. King. Symbolic execution and program testing. In: Communications of the ACM, vol. 19. N7. pp. 385--394 (1976)}. In particular, it describes the idea of the program state, and how the analyzer splits possible program states into equivalence classes.
+
+The implementation of interprocedural analysis in CSA is based on a work by T.~Reps, S.~Horwitz, and M.~Sagiv\footnote{Precise interprocedural dataflow analysis via graph reachability, T Reps, S Horwitz, and M Sagiv, POPL '95,     \url{http://portal.acm.org/citation.cfm?id=199462}}.
+
+\newpage
+\section{The symbolic value hierarchy}\index[notion]{Symbolic Value|textbf}\label{sec:svals}
+
+Symbolic values are the notation CSA uses for describing known and unknown values it encounters during symbolic execution\index[notion]{Symbolic Execution} of the program. CSA uses a very complex hierarchy of symbolic values.
+
+The basic class for representing various symbolic values is the \lstinline|SVal|\index{SVal|textbf} class. It has various sub-classes which represent different kinds of symbolic values. There are also two auxiliary classes, \lstinline|MemRegion|\index{MemRegion} and \lstinline|SymExpr|\index{SymExpr}, that specifically handle memory regions and symbolic expressions respectively.
+
+Objects of \lstinline|SymExpr| class are also often referred to as \emph{symbols}\index[notion]{Symbolic Value!Symbol|see{Symbolic Expression}}, and represent unknown numeric values; if a value is known during analysis, it is called a \emph{concrete value}. \lstinline|MemRegion| objects --- ``\emph{regions}'' --- are used for two purposes: as locations for region store bindings in the memory model of the analyzer, and in order to represent pointer values.
+
+The three classes are very much inter-connected. For example, regions may be ``based on'' symbols and concrete values (for example, a region pointed to by a pointer symbol, or a region of an array element with a known or unknown index), symbols may be ``based on'' regions (for example, a symbol defined as an initial value of a region).
+
+Additionally, \lstinline|SVal| sub-classes are split into two large categories: \lstinline|Loc|\index{SVal!Loc|textbf} for l-values and \lstinline|NonLoc|\index{SVal!NonLoc|textbf} for r-values.
+
+Figure \ref{fig:sval_table} illustrates the functional difference between these classes.
+
+\begin{figure}[!ht]\center
+\begin{tabular}{|r|l|c|c|c|}
+\hline
+&\textbf{Role}&\lstinline|SVal|&\lstinline|MemRegion|&\lstinline|SymExpr|\\
+\hline
+1&Serve as range constraint keys&&&\checkmark\\
+\hline
+2&Serve as region binding keys&&\checkmark&\\
+\hline
+3&Serve as region binding values&\checkmark&&\\
+\hline
+4&Serve as environment values&\checkmark&&\\
+\hline
+5&Carry taint&&&\checkmark\\
+\hline
+6&Carry metadata&&\checkmark&\\
+\hline
+7&Serve as metadata values&&&\checkmark\\
+\hline
+8&Be stored in the GDM&\checkmark&\checkmark&\checkmark\\
+\hline
+\end{tabular}
+\caption{Comparison of values, memory regions, and symbolic expressions.}
+\label{fig:sval_table}
+\end{figure}\index[notion]{Exploded Node!Program State!Range Constraint}\index[notion]{Exploded Node!Program State!Region Store}\index[notion]{Exploded Node!Program State!Environment}\index[notion]{Exploded Node!Program State!Taint}\index[notion]{Exploded Node!Program State!Generic Data Map}
+
+It only makes sense to constraint symbols; concrete values are already known, so it's pointless to assign integral range constraints upon them any further, and memory region addresses are never really defined in compile-time. It is also natural that region store works by assigning arbitrary values to regions, and environment works by assigning arbitrary values to AST expressions.
+
+Line 5 of this table may surprise you, as above we have been discussing tainted memory regions, and some methods that work with taint accept arbitrary \lstinline|SVal|'s. However, when taint analysis works with values other than symbols, it merely tries to find symbols inside them. We are going to discuss it in detail in subsection~\ref{subsec:taint_3}. The concept of metadata symbols would be discussed later in \ref{subsubsec:metadata}. Finally, GDM\index[notion]{Exploded Node!Program State!Generic Data Map} can carry pretty much anything, that's what ``G'' stands for.
+
+\subsection{Constructing symbolic values}
+
+The \lstinline|SValBuilder|\index{SValBuilder|textbf} class provides methods for constructing \lstinline|SVal| objects. It allows constructing all kinds of \lstinline|SVal|'s and all kinds of \lstinline|SymExpr|'s (representing the latter as \lstinline|SVal|'s if necessary). It also allows evaluating operations on symbolic values.
+
+However, for constructing memory regions, you should be using the \lstinline|MemRegionManager|\index{MemRegionManager|textbf} object. It is sometimes useful to be able to construct a sub-region (eg. a field region for a structure region with a known declaration, in order to later obtain a value of the field).
+
+You should almost never construct a \lstinline|SymExpr|. A few rare cases when you want to construct a symbol include creating some sort of \lstinline|SymbolConjured|\index{SymExpr!SymbolConjured} during some sort of \lstinline|eval::Call|\index{Checker!eval::Call}, and also constructing \lstinline|SymbolMetadata|\index{SymExpr!SymbolMetadata} when your checker uses this mechanism. Most of the time, however, you would be receiving all the necessary symbols from the environment or the region store, and rarely even care about their kind.
+
+In any case, you should be using methods of \lstinline|SValBuilder|\index{SValBuilder}, rather than accessing the \lstinline|SymbolManager|\index{SymbolManager|textbf} object directly, for constructing all kinds of \lstinline|SymExpr|'s. These methods would return a \lstinline|nonloc::SymbolVal|\index{SVal!NonLoc!nonloc::SymbolVal} containing the symbol if the symbol requested is of integral type, or a \lstinline|loc::MemRegionVal| containing a \lstinline|SymbolicRegion|\index{MemRegion!SymbolicRegion} wrapping the symbol if a pointer type was requested. In both cases, you can call the \lstinline|getAsSymbol()|\index{SVal!getAsSymbol()} method of the resulting \lstinline|SVal| to obtain the \lstinline|SymExpr| itself.
+
+\subsection{Memory model of the analyzer}\index[notion]{Symbolic Value!Memory Region|textbf}\label{subsec:MemRegion}
+
+\lstinline|MemRegion| is a segment of memory. When it is stored inside an \lstinline|SVal| of a pointer type, it represents the address of the first byte of the segment; however, you should still imagine the \lstinline|MemRegion| object as carrying information about the whole segment.
+
+The \lstinline|getAsRegion()|\index{SVal!getAsRegion()|textbf} method of the \lstinline|SVal| class works for the following \lstinline|SVal| kinds:
+
+\begin{itemize}
+\item[---]\lstinline|loc::MemRegionVal|\index{SVal!Loc!loc::MemRegionVal|textbf} --- a pointer value described as the address of the first byte of the given region.
+\item[---]\lstinline|nonloc::LocAsInteger|\index{SVal!NonLoc!nonloc::LocAsInteger|textbf} --- a similar pointer value, just stored inside an integer. This kind of \lstinline|SVal|'s represents results of pointer-to-integer casts.
+\end{itemize}
+
+
+Some memory regions are \emph{sub-regions} of other regions. A sub-region is a sub-segment inside a segment. Sub-regions inherit from \lstinline|SubRegion| class. Every sub-region has a length (``extent''), which may be obtained with the \lstinline|getExtent(...)|\index{MemRegion!SubRegion!getExtent()|textbf} method of \lstinline|SubRegion|. Extent may be either concrete or symbolic.
+
+Other regions, known as \emph{memory spaces}\index[notion]{Symbolic Value!Memory Region!Memory Space|textbf}, do not belong inside any other region.
+
+Each \lstinline|SubRegion| has exactly one direct super-region obtained via the \lstinline|getSuperRegion()|\index{MemRegion!SubRegion!getSuperRegion()|textbf} method. Memory regions that have a memory space as their direct super-region are called \emph{base regions}. If a region is neither a memory space nor a base region, then there is exactly one base region at the end of its super-region chain. There is a separate family of classes for representing base regions: by looking only at the class of the region, you can determine if it is a base region inside a memory space, or is located inside another base-region.
+
+You can obtain the memory space in which the region belongs with \lstinline|getMemorySpace()|\index{MemRegion!getMemorySpace()|textbf} method, and obtain the base region for any sub-region with \lstinline|getBaseRegion()|\index{MemRegion!SubRegion!getBase()|textbf}.
+
+\emph{Base regions}\index[notion]{Symbolic Value!Memory Region!Base Region|textbf} --- the direct sub-regions of memory spaces --- can be either \emph{typed} or \emph{untyped}. A typed region is a region that holds values of a known type. An untyped region is a region with a value of unknown type, even though you may have a rough idea of what is stored there or where it came from.
+
+\begin{nobr}
+For example, consider the following code:
+\begin{lstlisting}[style=cplusplus]
+struct A {
+  int x, y;
+};
+struct B: A {
+  int u, v;
+};
+struct C {
+  int t;
+  B *b;
+};
+void foo(C c) {
+  c.b[5].y; // <-- that
+}
+\end{lstlisting}
+\end{nobr}
+
+Then the system of regions describing field \lstinline|y| on line 20 is vaguely depicted on figure \ref{fig:memregs}.
+
+\begin{figure}[!ht]\center
+\includegraphics[scale=\imgscale]{memregs.pdf}
+\caption{The way the analyzer represents \lstinline|c.b[5].y|.}
+\label{fig:memregs}
+\end{figure}
+
+\begin{nobr}
+If you \lstinline|dump()| this region to \lstinline|stderr| during analysis, you would see a pretty print like
+\begin{lstlisting}[style=commandline]
+base{element{SymRegion{reg_$0<c->b>},5 S32b,struct B},A}->y
+\end{lstlisting}
+\end{nobr}
+
+In words, it would be expressed as:
+
+\begin{nobr}
+\begin{itemize}
+\item[]\lstinline|FieldRegion|\index{MemRegion!FieldRegion} for declaration of member variable \lstinline|y|,
+\begin{itemize}
+\item[]inside \lstinline|CXXBaseRegion|\index{MemRegion!CXXBaseObjectRegion} for declaration of class \lstinline|A|,
+\begin{itemize}
+\item[]inside \lstinline|ElementRegion|\index{MemRegion!ElementRegion} for element number $5$ of type \lstinline|B|,
+\begin{itemize}
+\item[]inside \lstinline|SymbolicRegion|\index{MemRegion!SymbolicRegion} for the pointer symbol of \lstinline|SymbolRegionValue|\index{SymExpr!SymbolRegionValue} kind,\\
+which represents the initial value of:
+\end{itemize}
+\end{itemize}
+\end{itemize}
+\end{itemize}
+
+\begin{itemize}
+\item[]\lstinline|FieldRegion|\index{MemRegion!FieldRegion} for declaration of member variable \lstinline|b|,
+\begin{itemize}
+\item[]\lstinline|VarRegion|\index{MemRegion!VarRegion} for declaration of a local variable \lstinline|c|.
+\end{itemize}
+\end{itemize}
+\end{nobr}
+
+You should be able to understand most of this picture after reading this subsection, with an exception of the \lstinline|SymbolRegionValue| thing, which is explained in subsection \ref{subsec:SymExpr}.
+
+\subsubsection{Memory spaces}
+
+Memory spaces\index[notion]{Symbolic Value!Memory Region!Memory Space} inherit from the \lstinline|MemSpaceRegion|\index{MemRegion!MemSpaceRegion|textbf} class. Most memory spaces are ``singletons'', and there are actually very few of them:
+\begin{itemize}
+\item[---]\lstinline|GlobalsSpaceRegion|\index{MemRegion!GlobalsSpaceRegion|textbf} --- a base class for four different memory spaces:
+\medskip
+\begin{itemize}
+\item[---]\lstinline|NonStaticGlobalSpaceRegion|
+\index{MemRegion!NonStaticGlobalSpaceRegion|textbf} --- the single memory space for all non-static global variables, which is split into three:
+\begin{itemize}
+\item[---]\lstinline|GlobalImmutableSpaceRegion|\index{MemRegion!GlobalImmutableSpaceRegion|textbf}, which consists of globals that cannot be modified,
+\item[---]\lstinline|GlobalSystemSpaceRegion|\index{MemRegion!GlobalSystemSpaceRegion|textbf}, which includes variables that are most likely only modified by system calls, such as \lstinline|errno|,
+\item[---]\lstinline|GlobalInternalSpaceRegion|\index{MemRegion!GlobalInternalSpaceRegion|textbf}, which consists other global variables,
+\end{itemize}
+\item[---]\lstinline|StaticGlobalSpaceRegion|\index{MemRegion!StaticGlobalSpaceRegion|textbf} --- the memory space for all static global variables,
+\end{itemize}
+\item[---]\lstinline|HeapSpaceRegion|\index{MemRegion!HeapSpaceRegion|textbf} --- holding all regions allocated on the heap.
+\item[---]\lstinline|StackSpaceRegion|\index{MemRegion!StackSpaceRegion|textbf} --- a base class for two different memory spaces:
+\medskip
+\begin{itemize}
+\item[---]\lstinline|StackArgumentsSpaceRegion|
+\index{MemRegion!StackArgumentsSpaceRegion|textbf} --- memory space of function call arguments,
+\item[---]\lstinline|StackLocalsSpaceRegion|\index{MemRegion!StackLocalsSpaceRegion|textbf} --- memory space for local variables.
+\end{itemize}
+Note that unlike other memory spaces, there may be multiple \lstinline|StackSpaceRegion| instances --- one for every \lstinline|StackFrameContext|\index{LocationContext!StackFrameContext}.
+\item[---]\lstinline|UnknownSpaceRegion|\index{MemRegion!UnknownSpaceRegion|textbf} --- whenever the analyzer has no idea where the region is actually stored.
+\end{itemize}
+
+Memory spaces are important because regions are considered different if they are inside different memory spaces, even if all other traits of these regions are equal. For example, regions of the function parameter variable in different calls are different because their memory spaces are defined by different stack frame contexts, even though variable declaration is the same.
+
+\subsubsection{Untyped base regions}
+
+There are only three kinds of untyped regions:
+
+\begin{itemize}
+\item[---] \lstinline|AllocaRegion|\index{MemRegion!AllocaRegion|textbf} --- a region allocated on the stack by calling the \lstinline|alloca()| function of the standard C library. This region is untyped because this function allocates raw data.
+
+\lstinline{AllocaRegion} always resides in \lstinline|StackLocalsSpaceRegion|\index{MemRegion!StackLocalsSpaceRegion}.
+\item[---] \lstinline|SymbolicRegion|\index{MemRegion!SymbolicRegion|textbf} --- a region pointed to by a pointer, value of which is a symbolic expression. This region is untyped, because pointers can be casted freely in C, and you cannot be sure that type of data it points to matches the pointer type.
+
+\lstinline|SymbolicRegion| class deserves special attention due to the fact that pointer symbols, even though their type is a pointer type, are technically \lstinline|NonLoc|. So the purpose of the \lstinline|SymbolicRegion| class is to express and deliver the \lstinline|Loc| part of things --- a region that is created after a pointer value, rather than vice versa.
+
+If a sub-region has \lstinline|SymbolicRegion| as its base region, the region is said to have \emph{symbolic base}, and the symbolic region is said to be the symbolic base of that region. The  \lstinline|getSymbolicBase()|\index{MemRegion!getSymbolicBase()|textbf} method of \lstinline|MemRegion| returns a pointer to the symbolic base region or a null pointer if the base isn't symbolic. This method is often useful when you need to figure out if a complex sub-region is actually related to a certain pointer symbol.
+
+\lstinline|SymbolicRegion| normally resides in \lstinline|UnknownSpaceRegion|\index{MemRegion!UnknownSpaceRegion}, because the nature of the pointer is often unknown. However, sometimes the pointer is known to point to heap (for example, if it was returned by the default operator \lstinline|new|), and then the region would reside in \lstinline|HeapSpaceRegion|\index{MemRegion!HeapSpaceRegion}. Heap symbolic regions are created with \lstinline|getSymbolicHeapRegion()| method of \lstinline|MemRegionManager|\index{MemRegionManager}.
+\end{itemize}
+
+\subsubsection{Typed base regions with typed values}
+
+Typed regions are regions with a common ancestor class known as \lstinline|TypedValueRegion|\index{MemRegion!TypedValueRegion}, though not all its successors are base regions; in fact, sub-regions of base regions are typed as well. Typed regions enjoy much more variety:
+
+\begin{itemize}
+\item[---]\lstinline|VarRegion|\index{MemRegion!VarRegion|textbf} is a region of a variable. For every AST global or static variable declaration, one \lstinline|VarRegion| is defined. For stack variables, regions can be different inside different function calls, simply by being sub-regions of different \lstinline|StackSpaceRegion|\index{MemRegion!StackSpaceRegion} memory spaces. Also note that member variable of a class is not at all a base region and is never represented with a \lstinline|VarRegion|.
+
+\lstinline|VarRegion| may reside in various memory spaces, depending on the nature of the variable declaration.
+
+\item[---]\lstinline|CXXThisRegion|\index{MemRegion!CXXThisRegion|textbf} is the region where the implicit \lstinline|this| pointer is stored during a C++ method call. This typed region is always located on the stack, and there is at most one \lstinline|CXXThisRegion| for every stack frame context (that is, for every \lstinline|StackArgumentsSpaceRegion| space), much like \lstinline|VarRegion|'s of function parameters.
+
+Note that \lstinline|CXXThisRegion| is not the object itself, but merely a stack region holding the pointer. The object itself would be the symbolic value stored in this region. For a top-level call, the object region would be described as the \lstinline|SymbolicRegion| of the \lstinline|SymbolRegionValue|\index{SymExpr!SymbolRegionValue} of \lstinline|CXXThisRegion| of the top-level stack frame; in particular, it would be untyped, even though \lstinline|CXXThisRegion| itself is always typed. For nested function calls during interprocedural analysis\index[notion]{Interprocedural Analysis}, the current object region may be typed (eg. when \lstinline|CXXThisRegion| of the stack frame of the nested call holds a pointer to a \lstinline|VarRegion| for a known variable).
+\item[---]\lstinline|CXXTempObjectRegion|\index{MemRegion!CXXTempObjectRegion|textbf} represents memory regions of a C++ temporary object. It appears when semantics of C++ require creating an auxiliary invisible object, for example, when creating an object by calling a constructor directly without operator \lstinline|new|. This region holds memory of an AST expression that caused it to appear.
+
+\lstinline|CXXTempObjectRegion| may reside in \lstinline|StackLocalsSpaceRegion|\index{MemRegion!StackLocalsSpaceRegion}, and it may also sometimes reside in \lstinline|GlobalInternalSpaceRegionKind|\index{MemRegion!GlobalInternalSpaceRegionKind}, when the \lstinline|getCXXStaticTempObjectRegion()| method of the \lstinline|MemRegionManager|\index{MemRegionManager} was used for creating it.
+
+\item[---]\lstinline|CompoundLiteralRegion|\index{MemRegion!CompoundLiteralRegion|textbf} represents memory region of an initializer-list (``compound literal'') object.
+\item[---]\lstinline|StringRegion|\index{MemRegion!StringRegion|textbf} --- a region of a string literal.
+\end{itemize}
+
+\subsubsection{Typed base regions with untyped values}
+
+There are a few special kinds of regions that inherit from \lstinline|TypedRegion| but not \lstinline|TypedValueRegion|. These regions have well-defined ``location'' (pointer) type, however the type of the values they store is not defined as the pointee type of the location type.
+
+\begin{itemize}
+\item[---] \lstinline|BlockDataRegion|\index{MemRegion!BlockDataRegion|textbf} --- a base region for representing data stored inside blocks (the non-standard Apple~Inc. extension to C and C++). These regions handle both code and data for the block, and implement methods for working with closures.
+\item[---]\lstinline|CodeTextRegion|\index{MemRegion!CodeTextRegion|textbf} represents memory regions of program code rather than data. There are two sub-kinds: \lstinline|FunctionTextRegion|\index{MemRegion!FunctionTextRegion|textbf} for function code, often used for representing function pointer values in the analyzer, and \lstinline|BlockTextRegion|\index{MemRegion!BlockTextRegion|textbf} for block code.
+\end{itemize}
+
+\subsubsection{Sub-regions of base regions}
+
+Sub-regions of base regions are always typed, even if the base region is untyped.
+
+\begin{itemize}
+\item[---]\lstinline|CXXBaseObjectRegion|\index{MemRegion!CXXBaseObjectRegion|textbf} is the region of a base class object inside a region of an object of derived class. This region is defined by the base class declaration in the AST.
+\item[---]\lstinline|ElementRegion|\index{MemRegion!ElementRegion|textbf} is a region of an array element inside a solid one-dimensional array. The index of the element is an arbitrary \lstinline|NonLoc| symbolic value of array index type, which is either a concrete integer, or a symbol. This region also carries type information; \lstinline|ElementRegion|s of same super-region with same index but different type are considered different.
+
+\lstinline|ElementRegion| is also used for representing type casts for untyped regions. For example, value of a symbolic pointer casted to type \lstinline|T*| is represented as element region of value type \lstinline|T| of a symbolic region over this pointer. If the pointer is casted further to another type \lstinline|S*|, then this \lstinline|ElementRegion| may be replaced with another \lstinline|ElementRegion| of value type \lstinline|S|.
+\item[---]\lstinline|FieldRegion|\index{MemRegion!FieldRegion|textbf} is a region of a field inside a structure or class or union. Similarly to \lstinline|VarRegion|, this region is also based on an AST variable declaration.
+\end{itemize}
+
+Note that the \lstinline|ElementRegion| does not represent a pointer dereference (instead, the \lstinline|SymbolicRegion|\index{MemRegion!SymbolicRegion} does), and subscripting pointers and arrays is handled completely differently.
+
+\begin{nobr}
+For example, consider a function \lstinline|foo()|:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+void foo(int *p, int a[5]) {
+  /* ... */
+}
+\end{lstlisting}
+\end{nobr}
+
+\begin{figure}[!ht]\center
+\includegraphics[scale=\imgscale]{ptrvsarr.pdf}
+\caption{The system of regions that represents \lstinline|p[5]| and \lstinline|a[5]| during analysis of \lstinline|foo()|.}
+\label{fig:ptrvsarr}
+\end{figure}
+
+\begin{nobr}
+Then \lstinline|a[5]| would be an \lstinline|ElementRegion| of \lstinline|VarRegion|\index{MemRegion!VarRegion} of parameter variable \lstinline|a|, which lies somewhere in \lstinline|StackArgumentsSpaceRegion|\index{MemRegion!StackArgumentsSpaceRegion}:
+\begin{lstlisting}[style=commandline]
+element{a,5 S32b,int}
+\end{lstlisting}
+\end{nobr}
+
+\begin{nobr}
+However, \lstinline|p[5]| is an \lstinline|ElementRegion| of \lstinline|SymbolicRegion| in \lstinline|UnknownSpaceRegion|\index{MemRegion!UnknownSpaceRegion}, constructed for the symbolic pointer value of parameter variable \lstinline|p|:
+\begin{lstlisting}[style=commandline]
+element{SymRegion{reg_$0<p>},5 S32b,int}
+\end{lstlisting}
+\end{nobr}
+
+The respective region hierarchy is displayed on figure \ref{fig:ptrvsarr}.
+
+\begin{nobr}
+\subsection{Concrete values}\index[notion]{Symbolic Value!Concrete Value|textbf}\label{subsec:ConcreteVal}
+
+Concrete values are values known in compile-time. If a value of an integer variable is known to be $42$, then there exists a concrete value representing it, and also there are no two different symbolic values that might accidentally represent it; one is enough.
+\end{nobr}
+
+\begin{nobr}
+\subsubsection{Numeric values}
+
+The most primitive concrete value, representing an integer with value known in compile-time. Internally, \lstinline|nonloc::ConcreteInt|\index{SVal!NonLoc!nonloc::ConcreteInt|textbf} holds an \lstinline|llvm::APSInt| inside; you can obtain it via \lstinline|getValue()|:
+
+\begin{lstlisting}[style=cplusplus,numbers=none]
+nonloc::ConcreteInt CI = Val.castAs<nonloc::ConcreteInt>();
+uint64_t Int = CI.getValue().getLimitedValue();
+\end{lstlisting}\index{SVal!castAs<>()}
+\end{nobr}
+
+Different instances of \lstinline|nonloc::ConcreteInt| class have different numeric value, type size, and signedness. However, for each combination of the three, there is only one \lstinline|nonloc::ConcreteInt| representing it; you cannot discriminate between two 32-bit signed zeros obtained from different sources.
+
+A \lstinline|loc::ConcreteInt|\index{SVal!Loc!loc::ConcreteInt|textbf} is a concrete integer representing a known pointer value. Internally it is similar to \lstinline|nonloc::ConcreteInt|. Usually instances of \lstinline|loc::ConcreteInt| would be unsigned integers of pointer width. It is very unlikely to know a memory address in compile-time, so the most common value you would see in \lstinline|loc::ConcreteInt| is $0$, representing a null-pointer.
+
+\subsubsection{Compound values}
+
+The simplest example of a concrete compound value is \lstinline|nonloc::CompoundVal|\index{SVal!NonLoc!nonloc::CompoundVal|textbf}, which represents a concrete r-value of an initializer-list or a string. Internally, it contains an \lstinline|llvm::ImmutableList| of \lstinline|SVal|'s stored inside the literal.
+
+However, there is another compound value used in the analyzer, which appears much more often during analysis, which is \lstinline|nonloc::LazyCompoundVal|\index{SVal!NonLoc!nonloc::LazyCompoundVal|textbf}. This value is an r-value that represents a snapshot of any structure ``as a whole`` at a given moment during the analysis. Such value is already quite far from being referred to as ``concrete'', as many fields inside it would be unknown or symbolic. \lstinline|nonloc::LazyCompoundVal| operates by storing two things:
+
+\begin{itemize}
+\item[---] a reference to the \lstinline|TypedValueRegion| being snapshotted (yes, it is always typed), and also
+\item[---] a copy of \emph{the whole} \lstinline|Store|\index{Store} object, obtained from the \lstinline|ProgramState|\index{ProgramState} in which it was created.
+\end{itemize}
+
+Essentially, \lstinline|nonloc::LazyCompoundVal| is a performance optimization for the analyzer. Because \lstinline|Store| is immutable\index[notion]{Immutability}, creating a \lstinline|nonloc::LazyCompoundVal| is a very cheap operation. Note that the \lstinline|Store| contains all region bindings in the program state, not only related to the region. Later, if necessary, such value can be unpacked --- eg. when it is assigned to another variable.
+
+\subsection{Special values}
+
+This subsection describes two singleton values reserved for special purposes.
+
+\subsubsection{UndefinedVal}\index{SVal!UndefinedVal|textbf}
+
+Whenever it is necessary for the analyzer core to emphasize that the value of something (an expression or a region) is undefined according to the language standard, an \lstinline|UndefinedVal| is produced. There is only one \lstinline|UndefinedVal|: you cannot discriminate between two \lstinline|UndefinedVal|'s obtained from different sources.
+
+Most of the time, whenever an \lstinline|UndefinedVal| appears, there should be a checker to warn that an undefined behavior\index[notion]{Undefined Behavior} has occurred. There are multiple official checkers that throw this type of warnings in the \lstinline|core.uninitialized| package.
+
+A common example of a situation in which \lstinline|UndefinedVal| appears is trying to obtain a value of an uninitialized variable.
+
+This is the only value that is banned in the \lstinline|assume(...)|\index{ProgramState!assume()} method of the \lstinline|ProgramState|.
+
+\subsubsection{UnknownVal}\index{SVal!UnknownVal|textbf}
+
+Whenever a symbolic execution engine fails to represent a certain value with a symbol, it creates another special value called \lstinline|UnknownVal|. Like \lstinline|UndefinedVal|, \lstinline|UnknownVal| is a singleton value; you cannot discriminate between two \lstinline|UnknownVal|'s obtained from different sources. However, you can discriminate between \lstinline|UnknownVal| and \lstinline|UndefinedVal|.
+
+An \lstinline|UnknownVal| may appear anywhere, anytime. It often appears when a symbolic expression exceeds its complexity limit. Its appearance in any place, no matter how critical, does not instantly indicate an error in the program, however it most likely indicates a failure of the analyzer core: lack of a distinct symbol for an unknown value defeats the purpose of symbolic execution. Most of the time, the analyzer ``conjures'' a special symbol for such values, but sometimes it wants to be sure you make completely no assumptions against this value, and thus creates an \lstinline|UnknownVal|. Most likely you'd want to avoid throwing warnings when you encounter an \lstinline|UnknownVal| in a checker callback.
+
+\subsection{Symbolic expressions}\label{subsec:SymExpr}
+
+Symbolic expressions\index[notion]{Symbolic Value!Symbolic Expression|textbf}, also referred to as symbols, are without doubt the essence of the whole idea behind symbolic execution.
+
+Symbols are \emph{timeless}: a symbolic value cannot ``change'' during analysis. Once a symbol is created, it represents the same value throughout all analysis. However, when the analysis progresses further through the program, new information may be gathered about this value and stored inside \lstinline|ProgramState|\index{ProgramState} in the form of \emph{range constraints}\index[notion]{Exploded Node!Program State!Range Constraint} imposed over this symbol.
+
+For example, on the \lstinline|true| branch of an \lstinline|if| statement, the symbol representing the condition value would be known to be non-zero. On the \lstinline|false| branch, it would be known to be equal to zero, essentially turning into a concrete value; in fact, the \lstinline|getSVal(...)|\index{ProgramState!getSVal()} family of methods would internally substitute such symbol with a concrete integer $0$.
+
+However, classification of symbolic values is very rarely important. Most of the time, the most important thing you need to know about symbols is that values represented by the same symbol are always equal, while different symbols may or may not represent different values. In fact, most of the analysis would work fairly well even if all symbols everywhere were of \lstinline|SymbolConjured|\index{SymExpr!SymbolConjured} type. Here are some of the benefits we have due to possessing a hierarchy of different classes for symbols:
+
+\begin{itemize}
+\item[---] \lstinline|RangeConstraintManager|\index{RangeConstraintManager} uses symbolic binary-expression classes to significantly simplify const\-raint conditions, eg. $(x + 3) > 5$ is easily transformed into $x > 2$, which would be hard if the symbol representing $(x + 3)$ didn't remember anything about $x$ or $3$.
+\item[---] Taint propagates automatically from tainted regions to data symbols representing their values, via the reference to the region stored inside the symbol.
+\item[---] At any moment, we can easily trace the origin of the symbol in a high-level manner. If we want to figure out what conditions are necessary in order to replicate the bug found by the analyzer, we can often do so by looking at the symbols inside the program state.
+\item[---] It is also often useful for debugging, and sometimes --- very rarely --- the internal logic of the checker itself would rely on symbol kinds. However, you should know what you're doing; this technique is often misused or used for quick and dirty incorrect heuristics. This subsection should give you a rough idea of what symbols are and what symbols aren't.
+\end{itemize}
+
+Symbol values always have a type, which is an integer or a pointer. 
+
+The \lstinline|getAsSymbol()|\index{SVal!getAsSymbol()|textbf} method of the \lstinline|SVal| class works with the following \lstinline|SVal| kinds:
+\begin{enumerate}
+\item[---]\lstinline|nonloc::SymbolVal|\index{SVal!NonLoc!nonloc::SymbolVal|textbf} --- the value which ``is'' the symbol ``itself''.
+\item[---]\lstinline|loc::MemRegionVal|\index{SVal!Loc!loc::MemRegionVal}, if the region inside it is a \lstinline|SymbolicRegion| (a ``symbolic pointer'' --- because \lstinline|nonloc::SymbolVal| is always \lstinline|NonLoc|, this method represents pointers as \lstinline|Loc| values). In this case, the method would return the symbol for which the region is constructed. If the optional boolean parameter of \lstinline|getAsSymbol()| is set to \lstinline|true|, this method would also work on arbitrary regions with symbolic base.
+\item[---]\lstinline|nonloc::LocAsInteger|\index{SVal!NonLoc!nonloc::LocAsInteger} --- extracting a symbolic pointer from the underlying \lstinline|loc::MemRegionVal|, if any.
+\end{enumerate}
+
+
+\subsubsection{Operation symbols}
+
+There are three symbols that represent binary operators on other symbols:
+\begin{itemize}
+ \item[---]\lstinline|SymIntExpr|\index{SymExpr!SymIntExpr|textbf} represents result of a binary operation between another symbol and a concrete integer, eg. $x + 5$;
+\item[---]\lstinline|IntSymExpr|\index{SymExpr!IntSymExpr|textbf} represents result of a binary operation between a concrete integer and another symbol, eg. $3 > x$;
+\item[---]\lstinline|SymSymExpr|\index{SymExpr!SymSymExpr|textbf} represents result of a binary operation between a concrete integer and another symbol, eg. $x * y$. Note that \lstinline|SymSymExpr| symbols are created by the analyzer very rarely, because they are mostly useless for the \lstinline|RangeConstraintManager|\index{RangeConstraintManager}, which cannot handle complicated constraints. Usually \lstinline|SymSymExpr|'s appear when one of the operands is tainted, in order to keep taint information.
+\end{itemize}
+
+There is also \lstinline|SymbolCast|, which represents the result of a cast into a certain type from another symbol.
+
+\subsubsection{Conjured symbols}\label{subsubsec:SymbolConjured}
+
+\lstinline|SymbolConjured|\index{SymExpr!SymbolConjured|textbf} is a fallback when everything else fails: the analyzer failed to make any sense at all from the expression, so it conjured up at least some symbol in order to keep path-sensitivity. Common examples of \lstinline|SymbolConjured| include return values of functions which were not modeled by the analyzer, because their source code of their body was not available, or for other reasons; it is also used for purposes of invalidation.
+
+\subsubsection{Region value symbols}
+
+Probably the most primitive ``sensible'' atomic (``data'') symbol, which we have already mentioned a few times, is \lstinline|SymbolRegionValue|\index{SymExpr!SymbolRegionValue|textbf}. It represents the value stored in the memory region \emph{at the beginning of the analysis}. This symbol contains a reference to the region.
+
+\begin{nobr}
+Consider the following example:
+
+\begin{lstlisting}[style=cplusplus]
+void foo(int a) {
+  int b = a;
+  a = 1;
+}
+\end{lstlisting}
+\end{nobr}
+
+At the beginning of the analysis (before line 2), value of \lstinline|b| is an \lstinline|UndefinedVal|\index{SVal!UndefinedVal}, while value of \lstinline|a| is a symbol of class \lstinline|SymbolRegionValue| representing the value of region of parameter variable \lstinline|a|.
+
+After line 2, the value of \lstinline|b| is changed to the \lstinline|SymbolRegionValue| representing the value of \lstinline|a|.
+
+After line 3, the value of \lstinline|a| is changed to a \lstinline|nonloc::ConcreteInt| with value $1$. However, \lstinline|b| still holds a symbol of \lstinline|SymbolRegionValue| kind for the region of variable \lstinline|a|, which still represents the \emph{original} value of~\lstinline|a|, rather than the new concrete value $1$.
+
+Another atomic symbol, closely related to \lstinline|SymbolRegionValue|, is \lstinline|SymbolDerived|\index{SymExpr!SymbolDerived|textbf}. It represents a value of a region \emph{after} another symbol was written into a direct or indirect super-region. \lstinline|SymbolDerived| contains a reference to both the parent symbol and the parent region. This symbol is mostly a technical hack. Usually \lstinline|SymbolDerived| appears after \emph{invalidation}\index[notion]{Invalidation}: the whole structure of a certain type gets smashed with a single \lstinline|SymbolConjured|, and then values of its fields become represented with the help of \lstinline|SymbolDerived| of that conjured symbol and the region of the field. In any case, \lstinline|SymbolDerived| is similar to \lstinline|SymbolRegionValue|, just refers to a value after a certain event during analysis rather than at start of analysis.
+
+\subsubsection{Extent symbols}
+
+As we mentioned in subsection \ref{subsec:MemRegion}, every memory region is a segment of bytes. We are usually interested in the address of the first byte, but sometimes we may try to find out the length (``extent'') of the region, which may be known (for plain variable regions) or unknown (usually for symbolic regions, which may actually be arrays of unknown length). When the extent is unknown, it is represented with a special symbol called \lstinline|SymbolExtent|\index{SymExpr!SymbolExtent|textbf}. This symbol contains a reference for the region.
+
+Of course, if you need to obtain extent of a certain region, you shouldn't be creating a new \lstinline|SymbolExtent| manually; you can rely on the \lstinline|getExtent(...)|\index{MemRegion!SubRegion!getExtent()} method of \lstinline|SubRegion|.
+
+\subsubsection{Metadata symbols}\label{subsubsec:metadata}
+
+Metadata symbols\index{SymExpr!SymbolMetadata|textbf} are symbols with a checker-specific meaning, tied to memory regions. The checker may create such symbols and manage their lifetime and garbage collection (via the \lstinline|check::LiveSymbols|\index{Checker!check::LiveSymbols} callback). The analyzer core never creates \lstinline|SymbolMetadata| on its own; only a checker can create such symbols.
+
+\begin{nobr}
+You can use \lstinline|SValBuilder| to create a new \lstinline|SymbolMetadata|. Here is an example code from the official \lstinline|alpha.unix.cstring.OutOfBounds| checker which creates metadata symbols that represent string length:
+
+\begin{lstlisting}[style=cplusplus, numbers=none]
+SValBuilder &SVB = C.getSValBuilder();
+QualType SizeTy = SVB.getContext().getSizeType();
+SVal StrLength = SVB.getMetadataSymbolVal(CStringChecker::getTag(),
+                                          MR, Ex, SizeTy, C.blockCount());
+\end{lstlisting}\index{CheckerContext!getSValBuilder()}\index{ASTContext!getSizeType()}\index{SValBuilder!getContext()}\index{CheckerContext!blockCount()}\index{SValBuilder!getMetadataSymbolVal()|textbf}
+\end{nobr}
+
+\lstinline|SymbolMetadata| is made with the following ingredients:
+\begin{itemize}
+\item[---]A symbol tag --- a \lstinline|void*| that uniquely identifies a kind of metadata symbols. In this example, the unique identifier of the checker itself, returned by the static \lstinline|getTag()|\index{Checker!getTag()|textbf} method of the \lstinline|Checker| object, is being used.
+\item[---]The parent region, to which the metadata is tied; in our case, it is the region of the string for which the length is defined.
+\item[---]An AST expression on which the symbol appeared.
+\item[---]The expected type of the symbol. As expected from an \lstinline|SValBuilder| method, if this type is \lstinline|Loc|, then the resulting \lstinline|SVal| would be of type \lstinline|loc::MemRegionVal|, carrying a \lstinline|SymbolicRegion| wrapping the symbol.
+\item[---]The block count: number of times the CFG block was visited during analysis. This allows discriminating symbols created on the same expression for the same region, whenever it is passed-through multiple times during analysis.
+\end{itemize}
+
+\subsection{Tainted values}\label{subsec:taint_3}\index[notion]{Exploded Node!Program State!Taint}
+
+As mentioned above, any symbols, and only symbols, can carry taint. However, for convenience, other values are said to inherit taint information from symbols on which they rely. Below is the complete list of cases of taint propagation through symbolic value hierarchy:
+
+\begin{itemize}
+\item[---]Memory regions are said to be tainted in the following cases:
+\medskip
+\begin{itemize}
+\item[---]A \lstinline|SymbolicRegion|\index{MemRegion!SymbolicRegion}, when constructed with a tainted pointer symbol;
+\item[---]An \lstinline|ElementRegion|\index{MemRegion!ElementRegion}, when constructed with a tainted index value;
+\item[---]Any kind of region inherits taint from its super-region.
+\end{itemize}
+\item[---]Symbols can inherit taint, regardless of their own taint information, in the following cases:
+\medskip
+\begin{itemize}
+\item[---]\lstinline|SymbolRegionValue|\index{SymExpr!SymbolRegionValue} may inherit taint from its parent region;
+\item[---]\lstinline|SymbolDerived|\index{SymExpr!SymbolDerived} may inherit taint from its parent symbol, but not from its parent region;
+\item[---]All operation symbols inherit taint from their operands.
+\end{itemize}
+\item[---]\lstinline|SVal|'s are said to be tainted when a symbol extracted with \lstinline|getAsSymbol()|\index{SVal!getAsSymbol()} or a region extracted with \lstinline|getAsRegion()|\index{SVal!getAsRegion()} is tainted.
+\end{itemize}
+
+These heuristics significantly simplify taint manipulation in the checkers.
+
+\begin{nobr}
+\subsection{Understanding debug dumps}
+
+All three symbolic value classes allow a convenient \lstinline|dump()| method useful for debugging. For most of the value kinds, this method produces a recognizable pattern, which can tell a lot of useful information about the value.
+\end{nobr}
+
+\begin{nobr}
+Consider an example:
+\begin{lstlisting}[style=commandline]
+reg_$2<element{SymRegion{derived_$1{conj_$0{int},a->ptr}},0 S32b,int}>
+\end{lstlisting}
+\end{nobr}
+
+This \lstinline|SVal| is a symbol, namely a \lstinline|SymbolRegionValue|\index{SymExpr!SymbolRegionValue}, which is represented by the \lstinline|reg_$N<...>| wrapper. The number \lstinline|N| after \lstinline|$| is the internal symbol counter assigned to each symbol inside the \lstinline|SymbolManager|\index{SymbolManager} object.
+
+This symbol represents the original value of a signed integer in \lstinline|ElementRegion|\index{MemRegion!ElementRegion} with index $0$ inside a certain \lstinline|SymbolicRegion|\index{MemRegion!SymbolicRegion} corresponding to a symbolic pointer. It is uncertain to the analyzer whether this pointer points to an array or to a single integer; however, it is certain that this pointer gets dereferenced in order to obtain the original value.
+
+The pointer itself is a \lstinline|SymbolDerived|\index{SymExpr!SymbolDerived}, which is derived for a \lstinline|FieldRegion|\index{MemRegion!FieldRegion} of field~\lstinline|ptr| of some structure variable~\lstinline|a|, from a \lstinline|SymbolConjured|\index{SymExpr!SymbolConjured} of type \lstinline|int|. The \lstinline|SymbolDerived| itself, being a base for a \lstinline|SymbolicRegion|, is necessarily a pointer value. However, the type of \lstinline|SymbolConjured| isn't a pointer; it has most likely appeared as a result of invalidation\index[notion]{Invalidation} of structure~\lstinline|a|.
+
+Hence, the value can be described in words as ``the value of the integer that was originally stored behind the pointer that appeared in the \lstinline|a.ptr| field during invalidation''.
+
+\begin{nobr}
+Consider another example:
+\begin{lstlisting}[style=commandline]
+&base{base{base{d,C},B},A} [as 64 bit integer]
+\end{lstlisting}
+\end{nobr}
+
+This value is a \lstinline|nonloc::LocAsInteger|\index{SVal!NonLoc!nonloc::LocAsInteger} that represents a concrete value of a location casted into a 64-bit integer. The location is a \lstinline|loc::MemRegionVal|\index{SVal!Loc!loc::MemRegionVal} (hence prefix `\lstinline|&|') holding a certain region.
+
+The region itself is the region of a C++ base object of class \lstinline|A| for an object \lstinline|d| (which probably belongs to class \lstinline|D|, and you can check this by dumping the declaration of variable \lstinline|d|). However, because \lstinline|D| is not a direct descendant of \lstinline|A|, you see the whole class inheritance path inside the region hierarchy.
+
+\subsection{Further reading}
+
+The memory model of Clang Static Analyzer was described in detail in an article by Z.~Xu, T.~Kremenek, and J.~Zhang\footnote{Z. Xu, T. Kremenek, and J. Zhang. A memory model for static analysis of C programs. In: ISoLA'10 Proceedings of the 4th international conference on Leveraging applications of formal methods, verification, and validation. pp. 535--548 (2010)}.
+
+\printindex[notion]
+\printindex
+
+\end{document}
