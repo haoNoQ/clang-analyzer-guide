@@ -171,6 +171,7 @@ Below is a rough to-do list of stuff that is not yet properly explained in the g
  \item Describe more Objective-C-related stuff.
  \item Using the \lstinline|SVal| visitor.
  \item Writing tests.
+ \item Coding style needs updating~--- outdated constructs are used.
 \end{enumerate}
 \end{multicols}
 
@@ -181,60 +182,77 @@ On the other hand, please do not send analyzer-related questions in private mess
 \newpage
 \subsection{FAQ: a quick guide through the guide}
 
+\begin{nobr}
 \begin{itemize}
 \item[\textbf{Q:}] \emph{Okay, so how do I write CSA checkers?}
 \item[\textbf{A:}] For a step-by-step quick start guide on coding checkers, see subsection \ref{subsec:coding_intro}.
 \end{itemize}
 \medskip
+\end{nobr}
 
+\begin{nobr}
 \begin{itemize}
 \item[\textbf{Q:}] \emph{Reference guides are boring. I prefer learning by example. Should I keep reading?}
 \item[\textbf{A:}] That's not really a reference guide, but rather a free-hand introduction to Clang Static Analyzer. You'd encounter code samples and useful snippets on almost every page. We did not try to copy the official Clang doxygen, which you would definitely refer to during your work on CSA checkers. However, we also strongly advise you to search through the official checker source code for finding how different classes and methods are used in practice.
 \end{itemize}
 \medskip
+\end{nobr}
 
+\begin{nobr}
 \begin{itemize}
 \item[\textbf{Q:}] \emph{This guide is quite big. My checker only needs to find calls to a certain function, and it shouldn't be hard. Do I really need to read the whole guide to implement it?}
 \item[\textbf{A:}] For finding simple code patterns, an AST matcher would easily do the job. Probably the example in subsection~\ref{subsec:ast_matchers} is all you need to know.
 \end{itemize}
 \medskip
+\end{nobr}
 
+\begin{nobr}
 \begin{itemize}
 \item[\textbf{Q:}] \emph{Now I have a real problem. My program crashes, due to double-close of} \lstinline|FlyingElephantDescriptor|\emph{, once in a few weeks, and I badly want to catch and debug it. Please help!}
 \item[\textbf{A:}] You came to the right place! If you want a checker that finds a program execution paths on which a certain sequence of events, such as double-free, occurs, then you need to implement a path-sensitive checker. You would probably need to read section \ref{sec:path_sensitive}, most importantly subsections~\ref{subsec:program_state} and~\ref{subsec:program_state_2}, paying a lot of attention in~\ref{subsubsec:gdm}, and probably look through subsection~\ref{subsec:path_sensitive_callbacks} to find the right callback to hook into.
 \end{itemize}
 \medskip
+\end{nobr}
 
+\begin{nobr}
 \begin{itemize}
 \item[\textbf{Q:}] \emph{So, how do I know if I need a path-sensitive or path-insensitive checker?}
 \item[\textbf{A:}] It depends on what information you need the analyzer core to provide. If you want to understand this matter in-depth, see section \ref{sec:data_structures}. Most of the time, you'd pick a path-sensitive checker. Only if your check is really simple, would you want to rely on AST-based checkers.
 \end{itemize}
 \medskip
+\end{nobr}
 
+\begin{nobr}
 \begin{itemize}
 \item[\textbf{Q:}] \emph{My path-sensitive bug report is too short, I cannot figure out what's going on!}
 \item[\textbf{A:}] By default, the analyzer doesn't draw path through sub-functions that returned before the bug was found. They only show the event of the bug, and decisions that lead to it in the same function or in its direct callers. If you need to highlight other events, probably inside sub-functions, then you need to implement a bug report visitor, as described in subsection~\ref{subsec:bug_visitors}.
 \end{itemize}
 \medskip
+\end{nobr}
 
+\begin{nobr}
 \begin{itemize}
 \item[\textbf{Q:}] \emph{Wait a minute, section} \ref{sec:data_structures} \emph{also mentions CFG-based analysis. When do I use this one?}
 \item[\textbf{A:}] Almost never, unless you really know what you're doing, and in this case you almost certainly don't need this guide. Even though it'd be great to have a rough idea of what CFG is and how it looks, most of the time path-sensitive checkers turn out to do the same job much easier.
 \end{itemize}
 \medskip
+\end{nobr}
 
+\begin{nobr}
 \begin{itemize}
 \item[\textbf{Q:}] \emph{I'm reading the guide randomly, and I've no idea what you mean by ``GDM''.}
 \item[\textbf{A:}] You can always refer to the alphabetical index at the end of  the guide. In fact, because the index is quite short, you may also read through it to find things you missed. The index of classes also highlights most useful methods in CSA classes and points to usage examples for each class or method across the guide.
 \end{itemize}
 \medskip
+\end{nobr}
 
+\begin{nobr}
 \begin{itemize}
 \item[\textbf{Q:}] \emph{Your path-sensitive engine is fantastic! How does it work?}
 \item[\textbf{A:}] The easiest way to explain how it works is probably say ``it constructs an exploded graph''. Even though the whole section \ref{sec:path_sensitive} is about how the path-sensitive engine works, you may also refer to the explanation of the exploded graph in subsection \ref{subsec:exploded_graph} for clearer understanding.
 \end{itemize}
 \medskip
-
+\end{nobr}
 
 \newpage
 \section{Introduction to the Clang Static Analyzer}\label{sec:intro}
