@@ -297,7 +297,7 @@ So even in this simple case, the analyzer's path-sensitive engine has an advanta
 All right, you got me: even putting the pointer to \lstinline|main| into a variable actually already means that \lstinline|main| was ``used'' within the program. But for educational purposes, we shall find out that in fact it is actually called.
 
 \begin{nobr}
-First, let us provide a definition of the checker in the list of checkers. Open up \lstinline|lib/StaticAnalyzer/Checkers/Checkers.td| in the clang source tree, and add a simple description of the checker somewhere too, say, \lstinline|alpha.core| package of checkers:
+First, let us provide a definition of the checker in the list of checkers. Open up \lstinline|include/clang/StaticAnalyzer/Checkers/Checkers.td| in the clang source tree, and add a simple description of the checker somewhere too, say, \lstinline|alpha.core| package of checkers:
 \begin{lstlisting}[style=commandline,title=\lstinline|@Checkers.td@|]
 @@@...@@@
  HelpText<"Check for assignment of a fixed address to a pointer">,
