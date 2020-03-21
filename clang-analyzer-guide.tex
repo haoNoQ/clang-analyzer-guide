@@ -486,7 +486,7 @@ We have been compiling the checker inside the Clang source tree. However, it is 
 \begin{nobr}
 The syntax for registering the checker changes in the case of compiling as a plugin. You don't need to include the \lstinline|ClangSACheckers.h| header, but instead you include the \lstinline|CheckerRegistry.h| header:
 \begin{lstlisting}[style=cplusplus,numbers=none]
-#include "clang/StaticAnalyzer/Core/CheckerRegistry.h"
+#include "clang/StaticAnalyzer/Frontend/CheckerRegistry.h"
 \end{lstlisting}
 \end{nobr}
 
@@ -497,7 +497,8 @@ Then we define an externally visible function in our library that would register
 extern "C"
 void clang_registerCheckers (CheckerRegistry &registry) {
   registry.addChecker<MainCallChecker>("alpha.core.MainCallChecker",
-                                       "Checks for calls to main");
+                                       "Checks for calls to main",
+                                       "https://my.docs/MainCallChecker");
 }
 \end{lstlisting}
 \end{nobr}
@@ -901,7 +902,7 @@ Ideally, the only thing match callback needs to do is throw the basic bug report
 
 \begin{lstlisting}[style=cplusplus,numbers=none]
 void Callback::run(const MatchFinder::MatchResult &Result) {
-  const CallExpr *CE = Result.Nodes.getStmtAs<CallExpr>("call");
+  const CallExpr *CE = Result.Nodes.getNodeAs<CallExpr>("call");
   assert(CE);
   SourceRange R = CE->getSourceRange();
   PathDiagnosticLocation ELoc =
@@ -975,8 +976,8 @@ AST_MATCHER(RecordDecl, isUnion) {
   return Node.isUnion();
 }
 
-} // end namespace clang
 } // end namespace ast_matchers
+} // end namespace clang
 \end{lstlisting}\index{AST\_MATCHER()}
 \end{nobr}
 
@@ -999,7 +1000,7 @@ void MainCallCheckerMatchers::checkASTCodeBody(const Decl *D,
       stmt(hasDescendant(
           callExpr(callee(functionDecl(hasName("main")))).bind("call"))),
       &CB);
-  F.matchAST(*(D->getBody()), AM.getASTContext());
+  F.match(*(D->getBody()), AM.getASTContext());
 }
 \end{lstlisting}\index{Checker!check::ASTCodeBody}\index{AnalysisManager}\index{BugReporter}\index{AnalysisManager!getASTContext()}\index{ASTContext}
 \end{nobr}
@@ -2061,21 +2062,20 @@ Usually \lstinline|BugReporter|\index{BugReporter} does a fairly good job at exp
 \begin{nobr}
 The syntax for bug reporter visitors is as follows:
 \begin{lstlisting}[style=cplusplus]
-class MyVisitor : public BugReporterVisitorImpl<MyVisitor> {
-  void Profile(llvm::FoldingSetNodeID &ID) const {
+class MyVisitor : public BugReporterVisitor {
+  void Profile(llvm::FoldingSetNodeID &ID) const override {
     /* ... */
   }
-  PathDiagnosticPiece *VisitNode(const ExplodedNode *N,
-                                 const ExplodedNode *PrevN,
-                                 BugReporterContext &BRC,
-                                 BugReport &BR) {
+  std::shared_ptr<PathDiagnosticPiece> VisitNode(const ExplodedNode *N,
+                                                 BugReporterContext &BRC,
+                                                 BugReport &BR) override {
     /* ... */
     if (const Stmt *S = /* Obtain a statement for diagnostic */) {
       PathDiagnosticLocation Pos(S, BRC.getSourceManager(),
                                  N->getLocationContext());
-      return new PathDiagnosticEventPiece(Pos, "Message");
+      return std::make_shared<PathDiagnosticEventPiece>(Pos, "Message");
     }
-    return NULL;
+    return nullptr;
   }
 };
 \end{lstlisting}\index{BugReporterVisitor|textbf}\index{BugReporterVisitor!VisitNode()|textbf}\index{BugReporterContext}\index{ExplodedNode}\index{BugReport}\index{PathDiagnosticLocation}\index{PathDiagnosticEventPiece}
